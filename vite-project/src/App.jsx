@@ -1,21 +1,22 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./views/auth/Login.jsx";
-import Register from "./views/auth/Register.jsx";
-import IndexPage from "./views/IndexPage.jsx";
-import ProductDetail from "./views/ProductDetail.jsx";
-import MainLayout from "./Layouts/MainLayout.jsx";
+// src/App.jsx
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import HomePage from './pages/HomePage.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
+import MainLayout from './layouts/MainLayout.jsx';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* rutas publicas */}
+        {/* Rutas públicas */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* rutas privadas */}
+        {/* Rutas privadas */}
         <Route element={<MainLayout />}>
-          <Route path="/inicio" element={<IndexPage />} />
+          <Route path="/inicio" element={<HomePage />} />
           <Route path="/producto/:id" element={<ProductDetail />} />
         </Route>
       </Routes>
