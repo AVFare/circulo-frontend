@@ -1,52 +1,66 @@
 // src/layouts/MainLayout.jsx
-import { useState } from "react";
-import Header from "../components/Header.jsx";
-import { Outlet } from "react-router-dom";
-import { Fab, Badge } from "@mui/material";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import CartDrawer from "../components/CartDrawer.jsx";
+import { useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import { Fab, Badge, Box } from '@mui/material';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import Header from '../components/Header.jsx';
+import CartDrawer from '../components/products/CartDrawer.jsx';
 
 export default function MainLayout() {
   const [cart, setCart] = useState([]);
-  const [open, setOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Agregar producto al carrito
   const addToCart = (product) => {
     setCart((prev) => {
-      const exists = prev.find((i) => i.id === product.id);
+      const exists = prev.find((item) => item.id === product.id);
       if (exists) {
-        return prev.map((i) =>
-          i.id === product.id ? { ...i, qty: i.qty + 1 } : i
+        return prev.map((item) =>
+          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
         );
       }
       return [...prev, { ...product, qty: 1 }];
     });
   };
 
-  const removeFromCart = (id) =>
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  // Eliminar producto del carrito
+  const removeFromCart = (id) => {
+    setCart((prev) => prev.filter((item) => item.id !== id));
+  };
 
-  const changeQty = (id, qty) =>
+  // Cambiar cantidad
+  const changeQty = (id, qty) => {
     setCart((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, qty: Math.max(1, qty) } : i
+      prev.map((item) =>
+        item.id === id ? { ...item, qty: Math.max(1, qty) } : item
       )
     );
+  };
 
-  const cartCount = cart.reduce((acc, i) => acc + i.qty, 0);
+  // Total de items en el carrito
+  const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
 
   return (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {/* Header */}
       <Header />
 
-      {/* Outlet recibe props extra para que las páginas puedan usar addToCart */}
-      <Outlet context={{ addToCart }} />
+      {/* Contenido principal */}
+      <Box sx={{ flexGrow: 1, bgcolor: 'background.default' }}>
+        <Outlet context={{ addToCart }} />
+      </Box>
 
-      {/* Botón flotante carrito */}
+      {/* Botón flotante del carrito */}
       <Fab
-        color="success"
-        onClick={() => setOpen(true)}
-        sx={{ position: "fixed", bottom: 24, right: 24 }}
-        aria-label="carrito"
+        color="primary"
+        onClick={() => setDrawerOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          boxShadow: '0 4px 20px rgba(45, 80, 22, 0.3)',
+        }}
+        aria-label="carrito de compras"
       >
         <Badge badgeContent={cartCount} color="error">
           <ShoppingCartIcon />
@@ -55,12 +69,12 @@ export default function MainLayout() {
 
       {/* Drawer del carrito */}
       <CartDrawer
-        open={open}
-        onClose={() => setOpen(false)}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
         items={cart}
         onRemove={removeFromCart}
         onChangeQty={changeQty}
       />
-    </>
+    </Box>
   );
 }
