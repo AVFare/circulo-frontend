@@ -1,4 +1,3 @@
-// src/components/products/ProductCard.jsx
 import { Card, CardActionArea, CardMedia, CardContent, Stack, Typography, Chip, Box } from '@mui/material';
 import { Link } from 'react-router-dom';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
@@ -20,7 +19,7 @@ export default function ProductCard({ product }) {
         to={`/producto/${product.id}`}
         sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
       >
-        {/* Imagen del producto */}
+        {/* Imagen del producto : esta en el mock SACAR!!!!!*/}
         <CardMedia
           component="img"
           height="200"
@@ -37,19 +36,10 @@ export default function ProductCard({ product }) {
 
         <CardContent sx={{ flexGrow: 1, p: 2 }}>
           <Stack spacing={1}>
-            {/* Precio destacado */}
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
               ${product.price.toLocaleString('es-AR')}
             </Typography>
 
-            {/* Cuotas */}
-            {product.installments && (
-              <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 600 }}>
-                {product.installments}
-              </Typography>
-            )}
-
-            {/* Nombre del producto */}
             <Typography
               variant="body2"
               sx={{
@@ -65,7 +55,6 @@ export default function ProductCard({ product }) {
               {product.name}
             </Typography>
 
-            {/* Envío gratis y ubicación */}
             <Box sx={{ pt: 1 }}>
               {product.freeShipping && (
                 <Chip

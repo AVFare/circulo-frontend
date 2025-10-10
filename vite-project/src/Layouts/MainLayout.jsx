@@ -1,4 +1,3 @@
-// src/layouts/MainLayout.jsx
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Fab, Badge, Box } from '@mui/material';
@@ -10,7 +9,6 @@ export default function MainLayout() {
   const [cart, setCart] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Agregar producto al carrito
   const addToCart = (product) => {
     setCart((prev) => {
       const exists = prev.find((item) => item.id === product.id);
@@ -23,12 +21,10 @@ export default function MainLayout() {
     });
   };
 
-  // Eliminar producto del carrito
   const removeFromCart = (id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // Cambiar cantidad
   const changeQty = (id, qty) => {
     setCart((prev) =>
       prev.map((item) =>
@@ -37,20 +33,16 @@ export default function MainLayout() {
     );
   };
 
-  // Total de items en el carrito
   const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* Header */}
+  
       <Header />
-
-      {/* Contenido principal */}
       <Box sx={{ flexGrow: 1, bgcolor: 'background.default' }}>
         <Outlet context={{ addToCart }} />
       </Box>
 
-      {/* Botón flotante del carrito */}
       <Fab
         color="primary"
         onClick={() => setDrawerOpen(true)}
@@ -67,7 +59,6 @@ export default function MainLayout() {
         </Badge>
       </Fab>
 
-      {/* Drawer del carrito */}
       <CartDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}

@@ -1,16 +1,15 @@
-// src/theme/theme.js
 import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2D5016', // verde oscuro cálido
+      main: '#2D5016',
       light: '#52734D',
       dark: '#1a3009',
       contrastText: '#fff',
     },
     secondary: {
-      main: '#91AC8F', // verde salvia
+      main: '#91AC8F', 
       light: '#B8C9B6',
       dark: '#6B8A68',
     },
@@ -20,11 +19,11 @@ const theme = createTheme({
       dark: '#3d5539',
     },
     background: {
-      default: '#FEFFF8', // blanco cálido
+      default: '#FEFFF8', 
       paper: '#FFFFFF',
     },
     accent: {
-      main: '#DDFFBC', // verde lima suave
+      main: '#DDFFBC', 
     },
   },
   typography: {

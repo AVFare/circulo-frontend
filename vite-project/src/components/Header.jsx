@@ -1,10 +1,9 @@
-// src/components/Header.jsx
 import { AppBar, Toolbar, Typography, Box, InputBase, alpha } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import { Link } from 'react-router-dom';
+import RecyclingIcon from '@mui/icons-material/Recycling';
 
-// Styled component para el buscador
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius,
@@ -47,7 +46,7 @@ export default function Header() {
   return (
     <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
       <Toolbar>
-        {/* Logo */}
+        {/* Logo q usamos en toda la app: MATERIAL UI CODED  */}
         <Typography
           variant="h6"
           component={Link}
@@ -61,10 +60,11 @@ export default function Header() {
             gap: 0.5,
           }}
         >
-          🌱 CÍRCULO
+          <RecyclingIcon />
+           CÍRCULO
         </Typography>
 
-        {/* Buscador */}
+        {/* buscador !!!!! */}
         <Search>
           <SearchIconWrapper>
             <SearchIcon />

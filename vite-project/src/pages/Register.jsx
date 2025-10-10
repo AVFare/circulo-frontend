@@ -1,7 +1,7 @@
-// src/pages/Register.jsx
 import { useState } from 'react';
 import { Box, Paper, Typography, TextField, Button, MenuItem, Stack } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
+import RecyclingIcon from '@mui/icons-material/Recycling';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -21,7 +21,6 @@ export default function Register() {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Registro:', form);
-    // Simulamos registro exitoso
     navigate('/');
   };
 
@@ -47,28 +46,35 @@ export default function Register() {
           mx: 2,
         }}
       >
-        {/* Logo */}
-        <Box
-          sx={{
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            bgcolor: 'primary.main',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto',
-            mb: 2,
-          }}
-        >
-          <Typography variant="h5">🌱</Typography>
-        </Box>
+                 <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              mb: 2,
+            }}
+          >
+
+            <RecyclingIcon
+            sx = {{
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: 50
+                
+            }}
+            />
+
+          </Box>
 
         <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: 'primary.main' }}>
           Crear cuenta
         </Typography>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <TextField
@@ -144,7 +150,6 @@ export default function Register() {
           </Stack>
         </form>
 
-        {/* Link a login */}
         <Typography variant="body2" sx={{ mt: 3 }}>
           ¿Ya tenés cuenta?{' '}
           <Link

@@ -1,8 +1,7 @@
-// src/pages/Login.jsx
 import { useState } from 'react';
 import { Box, Button, Container, TextField, Typography, Paper, Stack } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import RecyclingIcon from '@mui/icons-material/Recycling';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,7 +14,6 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Login:', form);
-    // Simulamos login exitoso
     navigate('/inicio');
   };
 
@@ -38,7 +36,6 @@ export default function Login() {
             textAlign: 'center',
           }}
         >
-          {/* Logo/Icono */}
           <Box
             sx={{
               width: 64,
@@ -52,10 +49,19 @@ export default function Login() {
               mb: 2,
             }}
           >
-            <Typography variant="h4">🌱</Typography>
+
+            <RecyclingIcon
+            sx = {{
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: 50
+                
+            }}
+            />
+
           </Box>
 
-          {/* Título */}
+       
           <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: 'primary.main' }}>
             CÍRCULO
           </Typography>
@@ -64,7 +70,7 @@ export default function Login() {
             Bienvenido de nuevo
           </Typography>
 
-          {/* Formulario */}
+      
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
               <TextField
@@ -102,7 +108,6 @@ export default function Login() {
             </Stack>
           </form>
 
-          {/* Link a registro */}
           <Typography variant="body2" sx={{ mt: 3 }}>
             ¿No tenés cuenta?{' '}
             <Link
