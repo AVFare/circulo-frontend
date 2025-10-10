@@ -48,13 +48,12 @@ export default function ProductDetail() {
   return (
     <Box sx={{ py: 4, minHeight: '100vh' }}>
       <Container maxWidth="lg">
-        {/* Botón volver */}
         <IconButton onClick={() => navigate('/inicio')} sx={{ mb: 2 }}>
           <ArrowBackIcon />
         </IconButton>
 
         <Grid container spacing={4}>
-          {/* Imagen */}
+ 
           <Grid item xs={12} md={6}>
             <Paper
               elevation={0}
@@ -79,10 +78,8 @@ export default function ProductDetail() {
             </Paper>
           </Grid>
 
-          {/* Información del producto */}
           <Grid item xs={12} md={6}>
             <Stack spacing={2}>
-              {/* Ubicación */}
               <Stack direction="row" spacing={0.5} alignItems="center">
                 <LocationOnOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -90,24 +87,14 @@ export default function ProductDetail() {
                 </Typography>
               </Stack>
 
-              {/* Nombre */}
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
                 {product.name}
               </Typography>
 
-              {/* Precio */}
               <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
                 ${product.price.toLocaleString('es-AR')}
               </Typography>
 
-              {/* Cuotas */}
-              {product.installments && (
-                <Typography variant="h6" sx={{ color: 'success.main', fontWeight: 600 }}>
-                  {product.installments}
-                </Typography>
-              )}
-
-              {/* Badge de envío */}
               {product.freeShipping && (
                 <Chip
                   icon={<LocalShippingOutlinedIcon />}
@@ -119,7 +106,6 @@ export default function ProductDetail() {
 
               <Divider />
 
-              {/* Botón agregar al carrito */}
               <Button
                 size="large"
                 variant="contained"
@@ -137,7 +123,6 @@ export default function ProductDetail() {
 
               <Divider />
 
-              {/* Descripción */}
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                   Descripción
@@ -145,11 +130,10 @@ export default function ProductDetail() {
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
                   Producto eco-friendly de excelente calidad. Fabricado con materiales sustentables
                   y procesos que respetan el medio ambiente. Ideal para quienes buscan un estilo de
-                  vida más consciente y responsable. 🌱
+                  vida más consciente y responsable. 
                 </Typography>
               </Box>
 
-              {/* Características */}
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                   Características
@@ -165,12 +149,11 @@ export default function ProductDetail() {
           </Grid>
         </Grid>
 
-        {/* Snackbar de confirmación */}
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={3000}
           onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
           <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
             ¡Producto agregado al carrito!

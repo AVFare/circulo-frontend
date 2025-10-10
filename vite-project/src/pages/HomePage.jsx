@@ -1,4 +1,3 @@
-// src/pages/HomePage.jsx
 import { useState, useMemo } from 'react';
 import { Box, Container, Typography, Stack, ToggleButton, ToggleButtonGroup, Chip } from '@mui/material';
 import ProductsGrid from '../components/products/ProductsGrid.jsx';
@@ -9,16 +8,15 @@ export default function HomePage() {
   const [freeShippingFilter, setFreeShippingFilter] = useState(false);
   const [sortBy, setSortBy] = useState('default');
 
-  // Filtrar y ordenar productos
+
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Filtro de envío gratis
+
     if (freeShippingFilter) {
       result = result.filter((p) => p.freeShipping);
     }
 
-    // Ordenamiento
     if (sortBy === 'price-asc') {
       result.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-desc') {
@@ -31,13 +29,12 @@ export default function HomePage() {
   return (
     <Box sx={{ py: 4, minHeight: '100vh' }}>
       <Container maxWidth="lg">
-        {/* Header de la página */}
         <Stack spacing={3}>
           <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main' }}>
             Productos Ecológicos
           </Typography>
 
-          {/* Filtros */}
+          {/* Filtros  cambiar, viene de back */}
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={2}
@@ -50,7 +47,7 @@ export default function HomePage() {
               boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
             }}
           >
-            {/* Filtro de envío gratis */}
+            {/* Filtro de envío gratis: sumamos como extra todo de front */}
             <Chip
               icon={<LocalShippingOutlinedIcon />}
               label="Envío gratis"
@@ -59,8 +56,6 @@ export default function HomePage() {
               variant={freeShippingFilter ? 'filled' : 'outlined'}
               sx={{ cursor: 'pointer' }}
             />
-
-            {/* Ordenamiento */}
             <ToggleButtonGroup
               value={sortBy}
               exclusive
@@ -68,18 +63,15 @@ export default function HomePage() {
               size="small"
               sx={{ flexWrap: 'wrap' }}
             >
-              <ToggleButton value="default">Por defecto</ToggleButton>
+              <ToggleButton value="default">por descuento</ToggleButton>
               <ToggleButton value="price-asc">Menor precio</ToggleButton>
               <ToggleButton value="price-desc">Mayor precio</ToggleButton>
             </ToggleButtonGroup>
           </Stack>
 
-          {/* Contador de resultados */}
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}
           </Typography>
-
-          {/* Grid de productos */}
           <ProductsGrid products={filteredProducts} />
         </Stack>
       </Container>

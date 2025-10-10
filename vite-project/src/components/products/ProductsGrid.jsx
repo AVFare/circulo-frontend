@@ -1,4 +1,3 @@
-// src/components/products/ProductsGrid.jsx
 import { Grid } from '@mui/material';
 import ProductCard from './ProductCard.jsx';
 

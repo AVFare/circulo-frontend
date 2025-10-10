@@ -1,4 +1,3 @@
-// src/components/CartDrawer.jsx
 import {
   Drawer,
   Box,
@@ -21,7 +20,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box sx={{ width: 360, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
+       
         <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             Tu carrito
@@ -33,7 +32,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
 
         <Divider />
 
-        {/* Lista de productos */}
+        {/* Lista de productos SUPER MAPEADA */}
         {items.length === 0 ? (
           <Box
             sx={{
@@ -66,7 +65,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                   }}
                 >
                   <Stack direction="row" spacing={2}>
-                    {/* Imagen */}
+                    {/* Imagen :D  */}
                     <Box
                       component="img"
                       src={item.img}
@@ -78,8 +77,6 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                         objectFit: 'cover',
                       }}
                     />
-
-                    {/* Info */}
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
                         {item.name}
@@ -88,7 +85,6 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                         ${item.price.toLocaleString('es-AR')}
                       </Typography>
 
-                      {/* Cantidad y eliminar */}
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                         <TextField
                           type="number"
@@ -105,7 +101,6 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                     </Box>
                   </Stack>
 
-                  {/* Subtotal */}
                   <Typography variant="body2" sx={{ mt: 1, textAlign: 'right', fontWeight: 600 }}>
                     Subtotal: ${(item.price * item.qty).toLocaleString('es-AR')}
                   </Typography>
@@ -115,7 +110,6 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
 
             <Divider />
 
-            {/* Footer con total y botón */}
             <Box sx={{ p: 2 }}>
               <Stack spacing={2}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
