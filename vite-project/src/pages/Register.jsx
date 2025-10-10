@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Paper, Typography, TextField, Button, MenuItem, Stack } from '@mui/material';
+import { Box, Paper, Typography, TextField, Button, /* MenuItem , */Stack } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 
@@ -124,7 +124,7 @@ export default function Register() {
               required
             />
 
-            <TextField
+            {/* <TextField
               select
               fullWidth
               label="Rol"
@@ -136,7 +136,7 @@ export default function Register() {
               <MenuItem value="USER">Usuario</MenuItem>
               <MenuItem value="ADMIN">Administrador</MenuItem>
             </TextField>
-
+ */}
             <Button
               type="submit"
               fullWidth

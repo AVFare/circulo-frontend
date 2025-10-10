@@ -4,6 +4,7 @@ import Register from './pages/Register.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import MainLayout from './layouts/MainLayout.jsx';
+import PasswordChange from './pages/PasswordChange.jsx';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         {/* rutas q cualkq persona tiene acceso */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path= "/cambiar-contraseña" element={<PasswordChange/>}/>
 
         
         <Route element={<MainLayout />}>

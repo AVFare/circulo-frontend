@@ -1,11 +1,20 @@
-import { useState } from 'react';
-import { Box, Button, Container, TextField, Typography, Paper, Stack } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom';
-import RecyclingIcon from '@mui/icons-material/Recycling';
+import { useState } from "react";
+import {
+  Box,
+  Button,
+  Container,
+  TextField,
+  Typography,
+  MenuItem,
+  Paper,
+  Stack,
+} from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
+import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: "", password: "" });
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -13,18 +22,18 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Login:', form);
-    navigate('/inicio');
+    console.log("Login:", form);
+    navigate("/inicio");
   };
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #DDFFBC 0%, #91AC8F 100%)',
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #DDFFBC 0%, #91AC8F 100%)",
       }}
     >
       <Container maxWidth="xs">
@@ -33,44 +42,42 @@ export default function Login() {
           sx={{
             p: 4,
             borderRadius: 3,
-            textAlign: 'center',
+            textAlign: "center",
           }}
         >
           <Box
             sx={{
               width: 64,
               height: 64,
-              borderRadius: '50%',
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
+              borderRadius: "50%",
+              bgcolor: "primary.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto",
               mb: 2,
             }}
           >
-
             <RecyclingIcon
-            sx = {{
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: 50
-                
-            }}
+              sx={{
+                color: "white",
+                fontWeight: "bold",
+                fontSize: 50,
+              }}
             />
-
           </Box>
 
-       
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: 'primary.main' }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 800, mb: 1, color: "primary.main" }}
+          >
             CÍRCULO
           </Typography>
 
-          <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
+          <Typography variant="body1" sx={{ mb: 3, color: "text.secondary" }}>
             Bienvenido de nuevo
           </Typography>
 
-      
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
               <TextField
@@ -83,7 +90,6 @@ export default function Login() {
                 required
                 variant="outlined"
               />
-
               <TextField
                 fullWidth
                 label="Contraseña"
@@ -93,8 +99,19 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 variant="outlined"
-              />
-
+              />{" "}
+          {/*     <TextField
+                select
+                fullWidth
+                label="Rol"
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                required
+              >
+                <MenuItem value="USER">Usuario</MenuItem>
+                <MenuItem value="ADMIN">Administrador</MenuItem>
+              </TextField> */}
               <Button
                 type="submit"
                 fullWidth
@@ -109,16 +126,28 @@ export default function Login() {
           </form>
 
           <Typography variant="body2" sx={{ mt: 3 }}>
-            ¿No tenés cuenta?{' '}
+            ¿No tenés cuenta?{" "}
             <Link
               to="/register"
               style={{
-                textDecoration: 'none',
+                textDecoration: "none",
                 fontWeight: 700,
-                color: '#2D5016',
+                color: "#2D5016",
               }}
             >
-              Registrate gratis
+              Registrate
+            </Link>
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 3 }}>
+            <Link
+              to="/cambiar-contraseña"
+              style={{
+                textDecoration: "none",
+                fontWeight: 700,
+                color: "#2D5016",
+              }}
+            >
+              Olvidé mi contraseña
             </Link>
           </Typography>
         </Paper>
