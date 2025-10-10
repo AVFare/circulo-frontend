@@ -1,17 +1,24 @@
-import { useState } from 'react';
-import { Box, Paper, Typography, TextField, Button, /* MenuItem , */Stack } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom';
-import RecyclingIcon from '@mui/icons-material/Recycling';
+import { useState } from "react";
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  /* MenuItem , */ Stack,
+} from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
+import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Register() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    firstname: '',
-    lastname: '',
-    email: '',
-    username: '',
-    password: '',
-    role: '',
+    firstname: "",
+    lastname: "",
+    email: "",
+    username: "",
+    password: "",
+    role: "",
   });
 
   const handleChange = (e) => {
@@ -20,18 +27,18 @@ export default function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Registro:', form);
-    navigate('/');
+    console.log("Registro:", form);
+    navigate("/");
   };
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #91AC8F 0%, #52734D 100%)',
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #DDFFBC 0%, #91AC8F 100%)",
         py: 4,
       }}
     >
@@ -40,38 +47,38 @@ export default function Register() {
         sx={{
           p: 4,
           borderRadius: 3,
-          textAlign: 'center',
-          width: '100%',
+          textAlign: "center",
+          width: "100%",
           maxWidth: 420,
           mx: 2,
         }}
       >
-                 <Box
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            bgcolor: "primary.main",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto",
+            mb: 2,
+          }}
+        >
+          <RecyclingIcon
             sx={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
-              mb: 2,
+              color: "white",
+              fontWeight: "bold",
+              fontSize: 50,
             }}
-          >
+          />
+        </Box>
 
-            <RecyclingIcon
-            sx = {{
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: 50
-                
-            }}
-            />
-
-          </Box>
-
-        <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: 'primary.main' }}>
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 800, mb: 3, color: "primary.main" }}
+        >
           Crear cuenta
         </Typography>
 
@@ -151,13 +158,13 @@ export default function Register() {
         </form>
 
         <Typography variant="body2" sx={{ mt: 3 }}>
-          ¿Ya tenés cuenta?{' '}
+          ¿Ya tenés cuenta?{" "}
           <Link
             to="/"
             style={{
-              textDecoration: 'none',
+              textDecoration: "none",
               fontWeight: 700,
-              color: '#2D5016',
+              color: "#2D5016",
             }}
           >
             Iniciá sesión
