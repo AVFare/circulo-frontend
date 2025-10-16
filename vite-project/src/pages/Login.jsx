@@ -99,7 +99,7 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 variant="outlined"
-              />{" "} <TextField
+              />{" "}{/*  <TextField
                 select
                 fullWidth
                 label="Rol"
@@ -110,7 +110,7 @@ export default function Login() {
               >
                 <MenuItem value="USER">Usuario</MenuItem>
                 <MenuItem value="ADMIN">Administrador</MenuItem>
-              </TextField> 
+              </TextField>  */}
               <Button
                 type="submit"
                 fullWidth

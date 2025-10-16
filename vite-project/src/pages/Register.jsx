@@ -5,7 +5,7 @@ import {
   Typography,
   TextField,
   Button,
-  /* MenuItem , */ Stack,
+  Stack,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import RecyclingIcon from "@mui/icons-material/Recycling";
@@ -18,17 +18,33 @@ export default function Register() {
     email: "",
     username: "",
     password: "",
-    role: "",
+    role: "user",
   });
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Registro:", form);
-    navigate("/");
+      
+      // Guardar el token y el rol en localStorage
+      localStorage.setItem('form', form);
+
+      
+      // Opcional: guardar también los datos del usuario (sin contraseña)
+      const userInfo = {
+        firstname: form.firstname,
+        lastname: form.lastname,
+        email: form.email,
+        username: form.username,
+        role:'user'
+      };
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+      
+      navigate("/");
+   
   };
 
   return (
@@ -131,19 +147,6 @@ export default function Register() {
               required
             />
 
-            {/* <TextField
-              select
-              fullWidth
-              label="Rol"
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              required
-            >
-              <MenuItem value="USER">Usuario</MenuItem>
-              <MenuItem value="ADMIN">Administrador</MenuItem>
-            </TextField>
- */}
             <Button
               type="submit"
               fullWidth
