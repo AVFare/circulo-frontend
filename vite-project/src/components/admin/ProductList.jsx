@@ -13,16 +13,24 @@ import {
   IconButton,
   Tooltip,
   TablePagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import { products } from '../../mock/products';
+import ProductForm from './ProductForm';
 
 export default function ProductList() {
   const [productList, setProductList] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     // En un caso real, cargaríamos los productos desde la API
@@ -45,6 +53,31 @@ export default function ProductList() {
     }
   };
 
+  const handleEdit = (product) => {
+    setSelectedProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setCreateModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleCloseCreateModal = () => {
+    setCreateModalOpen(false);
+  };
+
+  const handleProductSubmit = (productData) => {
+    console.log('Producto guardado:', productData);
+    // Aquí actualizarías la lista de productos
+    handleCloseEditModal();
+    handleCloseCreateModal();
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -53,7 +86,7 @@ export default function ProductList() {
           variant="contained" 
           color="primary" 
           startIcon={<AddIcon />}
-          onClick={() => {/* Lógica para abrir el formulario */}}
+          onClick={handleCreate}
         >
           Nuevo Producto
         </Button>
@@ -85,7 +118,7 @@ export default function ProductList() {
                   <TableCell>{product.location}</TableCell>
                   <TableCell align="center">
                     <Tooltip title="Editar">
-                      <IconButton color="primary">
+                      <IconButton color="primary" onClick={() => handleEdit(product)}>
                         <EditIcon />
                       </IconButton>
                     </Tooltip>
@@ -109,6 +142,62 @@ export default function ProductList() {
           labelRowsPerPage="Filas por página:"
         />
       </TableContainer>
+
+      {/* Modal para editar producto */}
+      <Dialog 
+        open={editModalOpen}
+        onClose={handleCloseEditModal}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          Editar Producto
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseEditModal}
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <ProductForm product={selectedProduct} onSubmit={handleProductSubmit} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para crear producto */}
+      <Dialog 
+        open={createModalOpen}
+        onClose={handleCloseCreateModal}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          Crear Nuevo Producto
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseCreateModal}
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <ProductForm onSubmit={handleProductSubmit} />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

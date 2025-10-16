@@ -4,23 +4,20 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  Divider,
   Grid,
   MenuItem,
   TextField,
   Typography,
   InputAdornment,
   Alert,
+  Divider,
 } from '@mui/material';
-import {
-  ShoppingBag,
-  Tag,
-  Package,
-  DollarSign,
-  Percent,
-  Save,
-} from 'lucide-react';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import LabelIcon from '@mui/icons-material/Label';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PercentIcon from '@mui/icons-material/Percent';
+import SaveIcon from '@mui/icons-material/Save';
 
 const categories = [
   { id: 1, name: 'Remeras' },
@@ -96,9 +93,7 @@ export default function ProductForm({ product, onSubmit }) {
 
   const finalPrice =
     formData.price && formData.discount
-      ? (Number(formData.price) * (1 - Number(formData.discount) / 100)).toFixed(
-          2
-        )
+      ? (Number(formData.price) * (1 - Number(formData.discount) / 100)).toFixed(2)
       : formData.price;
 
   return (
@@ -110,14 +105,14 @@ export default function ProductForm({ product, onSubmit }) {
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
               width: 48,
-              //height: 48,
+              height: 48,
               borderRadius: 2,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <ShoppingBag size={22} />
+            <ShoppingBagIcon />
           </Box>
           <Box>
             <Typography variant="h4" color="text.primary" fontWeight={700}>
@@ -144,7 +139,7 @@ export default function ProductForm({ product, onSubmit }) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Tag size={18} />
+                        <LabelIcon />
                       </InputAdornment>
                     ),
                   }}
@@ -164,8 +159,8 @@ export default function ProductForm({ product, onSubmit }) {
                   helperText={errors.description}
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start">
-                        <Package size={18} />
+                      <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 2 }}>
+                        <InventoryIcon />
                       </InputAdornment>
                     ),
                   }}
@@ -185,7 +180,7 @@ export default function ProductForm({ product, onSubmit }) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <DollarSign size={18} />
+                        <AttachMoneyIcon />
                       </InputAdornment>
                     ),
                   }}
@@ -205,7 +200,7 @@ export default function ProductForm({ product, onSubmit }) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Percent size={18} />
+                        <PercentIcon />
                       </InputAdornment>
                     ),
                   }}
@@ -252,7 +247,7 @@ export default function ProductForm({ product, onSubmit }) {
                 </Grid>
               )}
 
-              <Grid>
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   name="stock"
@@ -265,14 +260,14 @@ export default function ProductForm({ product, onSubmit }) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Package size={18} />
+                        <InventoryIcon />
                       </InputAdornment>
                     ),
                   }}
                 />
               </Grid>
 
-              <Grid  item xs={12} md={6}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   select
@@ -285,7 +280,7 @@ export default function ProductForm({ product, onSubmit }) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <ShoppingBag size={18} />
+                        <ShoppingBagIcon />
                       </InputAdornment>
                     ),
                   }}
@@ -310,7 +305,7 @@ export default function ProductForm({ product, onSubmit }) {
               size="large"
               fullWidth
               onClick={handleSubmit}
-              startIcon={<Save size={18} />}
+              startIcon={<SaveIcon />}
             >
               Guardar Producto
             </Button>
