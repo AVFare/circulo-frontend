@@ -71,12 +71,12 @@ export default function CheckoutCustomerForm({ initialData, onSubmit }) {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ p: 2 }}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ p: 0 }}>
       <Typography variant="h6" gutterBottom>
         Datos de envío
       </Typography>
       
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ mt: 0 }}>
         <Grid item xs={12} sm={6}>
           <TextField
             required

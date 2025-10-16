@@ -66,7 +66,6 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
       onClose={onClose} 
       fullWidth 
       maxWidth="md"
-      scroll="paper"
     >
       <DialogTitle sx={{ m: 0, p: 2, bgcolor: 'primary.main', color: 'white' }}>
         Finalizar compra
@@ -83,12 +82,14 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
+      
+      <Box sx={{ p: 2, bgcolor: 'background.paper' }}>
         <CheckoutStepper activeStep={activeStep} steps={STEPS} />
       </Box>
-      <DialogContent dividers>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
+      
+      <DialogContent sx={{ p: 0 }}>
+        <Grid container>
+          <Grid item xs={12} md={8} sx={{ p: 2, maxHeight: '60vh', overflow: 'auto' }}>
             {activeStep === 0 && (
               <CheckoutCustomerForm 
                 initialData={customerData} 
@@ -114,9 +115,11 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
               </Box>
             )}
           </Grid>
-          <Grid item xs={12} md={4}>
-            <Divider orientation="vertical" sx={{ display: { xs: 'none', md: 'block' } }} />
-            <Divider sx={{ display: { xs: 'block', md: 'none' }, mb: 2 }} />
+          <Grid item xs={12} md={4} sx={{ 
+            bgcolor: 'background.paper',
+            borderLeft: { xs: 'none', md: '1px solid rgba(0, 0, 0, 0.12)' },
+            borderTop: { xs: '1px solid rgba(0, 0, 0, 0.12)', md: 'none' }
+          }}>
             <PaymentSummary 
               cart={cart} 
               paymentStatus={paymentData.status}

@@ -12,7 +12,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
 export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
-  const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  // Cambiar item.quantity por item.qty para coincidir con la estructura del carrito
+  const subtotal = cart.reduce((total, item) => total + item.price * (item.qty || 1), 0);
   const shipping = subtotal > 10000 ? 0 : 1000; // Envío gratis para compras mayores a 10k
   const total = subtotal + shipping;
   
@@ -34,10 +35,10 @@ export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
           <ListItem key={item.id} sx={{ py: 1, px: 0 }}>
             <ListItemText 
               primary={item.name} 
-              secondary={`Cantidad: ${item.quantity}`} 
+              secondary={`Cantidad: ${item.qty || 1}`} 
             />
             <Typography variant="body2">
-              {formatPrice(item.price * item.quantity)}
+              {formatPrice(item.price * (item.qty || 1))}
             </Typography>
           </ListItem>
         ))}
