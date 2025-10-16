@@ -1,8 +1,10 @@
-import { AppBar, Toolbar, Typography, Box, InputBase, alpha } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, InputBase, alpha, Container } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import { Link } from 'react-router-dom';
 import RecyclingIcon from '@mui/icons-material/Recycling';
+import { useState, useEffect } from 'react';
+import AdminDrawer from './admin/AdminDrawer';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -43,40 +45,61 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export default function Header() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Recuperar datos de usuario del localStorage
+    const userData = localStorage.getItem('userInfo');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
   return (
     <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-      <Toolbar>
-        {/* Logo q usamos en toda la app: MATERIAL UI CODED  */}
-        <Typography
-          variant="h6"
-          component={Link}
-          to="/inicio"
-          sx={{
-            fontWeight: 800,
-            textDecoration: 'none',
-            color: 'inherit',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-          }}
-        >
-          <RecyclingIcon />
-           CÍRCULO
-        </Typography>
+      <Container maxWidth="xl">
+        <Toolbar disableGutters>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+            {/* Mostrar AdminDrawer solo para usuarios admin */}
+            {user && user.role === 'admin' && (
+              <AdminDrawer onNavigate={(section) => {
+                // Aquí podrías manejar la navegación o abrir modales según la sección
+              }} />
+            )}
 
-        {/* buscador !!!!! */}
-        <Search>
-          <SearchIconWrapper>
-            <SearchIcon />
-          </SearchIconWrapper>
-          <StyledInputBase
-            placeholder="Buscar productos ecológicos..."
-            inputProps={{ 'aria-label': 'buscar' }}
-          />
-        </Search>
+            {/* Logo q usamos en toda la app: MATERIAL UI CODED  */}
+            <Typography
+              variant="h6"
+              component={Link}
+              to="/inicio"
+              sx={{
+                fontWeight: 800,
+                textDecoration: 'none',
+                color: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <RecyclingIcon />
+               CÍRCULO
+            </Typography>
 
-        <Box sx={{ flexGrow: 1 }} />
-      </Toolbar>
+            {/* buscador !!!!! */}
+            <Search>
+              <SearchIconWrapper>
+                <SearchIcon />
+              </SearchIconWrapper>
+              <StyledInputBase
+                placeholder="Buscar productos ecológicos..."
+                inputProps={{ 'aria-label': 'buscar' }}
+              />
+            </Search>
+          </Box>
+
+          <Box sx={{ flexGrow: 1 }} />
+        </Toolbar>
+      </Container>
     </AppBar>
   );
 }
