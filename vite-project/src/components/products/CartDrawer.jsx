@@ -13,9 +13,24 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
+import { useState } from 'react';
+import CheckoutFlow from '../payments/CheckoutFlow';
 
 export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty }) {
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const total = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+
+  const handleCheckout = () => {
+    setCheckoutOpen(true);
+  };
+
+  const handleOrderComplete = (orderData) => {
+    console.log('Orden completada:', orderData);
+    // Aquí podrías enviar la orden a un backend o guardarla
+    // Limpiar el carrito después de la compra
+    // clearCart();
+    setCheckoutOpen(false);
+  };
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
@@ -121,14 +136,27 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                   </Typography>
                 </Stack>
 
-                <Button variant="contained" color="primary" size="large" fullWidth>
-                  Finalizar compra
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  fullWidth 
+                  disabled={items.length === 0}
+                  onClick={handleCheckout}
+                >
+                  Pagar ahora
                 </Button>
               </Stack>
             </Box>
           </>
         )}
       </Box>
+
+      <CheckoutFlow 
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        cart={items}
+        onOrderComplete={handleOrderComplete}
+      />
     </Drawer>
   );
 }
