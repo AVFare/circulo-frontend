@@ -1,13 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Fab, Badge, Box } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import Header from '../components/Header.jsx';
 import CartDrawer from '../components/products/CartDrawer.jsx';
+import AdminPanel from '../components/admin/AdminPanel.jsx'; // Importa el AdminPanel
 
 export default function MainLayout() {
   const [cart, setCart] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Recuperar datos de usuario del localStorage
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
 
   const addToCart = (product) => {
     setCart((prev) => {
@@ -41,7 +51,9 @@ export default function MainLayout() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-  
+      {/* Muestra el AdminPanel solo si el usuario no es "user" */}
+      {user && user.role !== 'user' && <AdminPanel />}
+      
       <Header />
       <Box sx={{ flexGrow: 1, bgcolor: 'background.default' }}>
         <Outlet context={{ addToCart }} />

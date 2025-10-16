@@ -39,7 +39,7 @@ export default function Register() {
         lastname: form.lastname,
         email: form.email,
         username: form.username,
-        role:'user'
+        role:'admin'
       };
       localStorage.setItem('userInfo', JSON.stringify(userInfo));
       
