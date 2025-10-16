@@ -33,6 +33,10 @@ export default function MainLayout() {
     );
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
 
   return (
@@ -65,6 +69,7 @@ export default function MainLayout() {
         items={cart}
         onRemove={removeFromCart}
         onChangeQty={changeQty}
+        clearCart={clearCart}
       />
     </Box>
   );
