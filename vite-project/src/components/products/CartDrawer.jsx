@@ -16,7 +16,7 @@ import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import { useState } from 'react';
 import CheckoutFlow from '../payments/CheckoutFlow';
 
-export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty }) {
+export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty, clearCart }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const total = items.reduce((acc, item) => acc + item.price * item.qty, 0);
 
@@ -26,10 +26,10 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
 
   const handleOrderComplete = (orderData) => {
     console.log('Orden completada:', orderData);
-    // Aquí podrías enviar la orden a un backend o guardarla
-    // Limpiar el carrito después de la compra
-    // clearCart();
+    // Usar la función clearCart para limpiar el carrito cuando se complete la compra
+    clearCart();
     setCheckoutOpen(false);
+    onClose(); // Cerrar el drawer también
   };
 
   return (
