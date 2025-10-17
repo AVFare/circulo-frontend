@@ -10,22 +10,24 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Box
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
-import CategoryIcon from '@mui/icons-material/Category';
-import PeopleIcon from '@mui/icons-material/People';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import PeopleIcon from '@mui/icons-material/People';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import ProductForm from './ProductForm';
 import ProductList from './ProductList';
+import UserList from './UserList';
+import OrderList from './OrderList';
 
 export default function AdminDrawer({ onNavigate }) {
   const [open, setOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [productListModalOpen, setProductListModalOpen] = useState(false);
+  const [userListModalOpen, setUserListModalOpen] = useState(false);
+  const [orderListModalOpen, setOrderListModalOpen] = useState(false);
 
   const toggleDrawer = () => {
     setOpen(!open);
@@ -33,11 +35,13 @@ export default function AdminDrawer({ onNavigate }) {
 
   const handleItemClick = (section) => {
     if (section === 'products') {
-      // Abre el modal de crear producto
       setProductModalOpen(true);
     } else if (section === 'productList') {
-      // Abre el modal de lista de productos
       setProductListModalOpen(true);
+    } else if (section === 'users') {
+      setUserListModalOpen(true);
+    } else if (section === 'orders') {
+      setOrderListModalOpen(true);
     } else if (onNavigate) {
       onNavigate(section);
     }
@@ -52,9 +56,16 @@ export default function AdminDrawer({ onNavigate }) {
     setProductListModalOpen(false);
   };
 
+  const handleCloseUserListModal = () => {
+    setUserListModalOpen(false);
+  };
+
+  const handleCloseOrderListModal = () => {
+    setOrderListModalOpen(false);
+  };
+
   const handleProductSubmit = (productData) => {
     console.log('Producto guardado:', productData);
-    // Aquí podrías enviar el producto al backend
     handleCloseProductModal();
     alert('Producto creado con éxito');
   };
@@ -70,15 +81,6 @@ export default function AdminDrawer({ onNavigate }) {
         onClose={toggleDrawer}
       >
         <List sx={{ width: 250 }}>
-          <ListItem button onClick={() => handleItemClick('dashboard')}>
-            <ListItemIcon>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItem>
-          
-          <Divider />
-          
           <ListItem button onClick={() => handleItemClick('products')}>
             <ListItemIcon>
               <InventoryIcon />
@@ -95,18 +97,18 @@ export default function AdminDrawer({ onNavigate }) {
           
           <Divider />
           
-          <ListItem button onClick={() => handleItemClick('categories')}>
-            <ListItemIcon>
-              <CategoryIcon />
-            </ListItemIcon>
-            <ListItemText primary="Categorías" />
-          </ListItem>
-          
           <ListItem button onClick={() => handleItemClick('users')}>
             <ListItemIcon>
               <PeopleIcon />
             </ListItemIcon>
             <ListItemText primary="Usuarios" />
+          </ListItem>
+
+          <ListItem button onClick={() => handleItemClick('orders')}>
+            <ListItemIcon>
+              <ShoppingCartIcon />
+            </ListItemIcon>
+            <ListItemText primary="Órdenes" />
           </ListItem>
         </List>
       </Drawer>
@@ -164,6 +166,62 @@ export default function AdminDrawer({ onNavigate }) {
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <ProductList />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para ver lista de usuarios */}
+      <Dialog 
+        open={userListModalOpen}
+        onClose={handleCloseUserListModal}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          Gestión de Usuarios
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseUserListModal}
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <UserList />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para ver lista de órdenes */}
+      <Dialog 
+        open={orderListModalOpen}
+        onClose={handleCloseOrderListModal}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          Gestión de Órdenes
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseOrderListModal}
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <OrderList />
         </DialogContent>
       </Dialog>
     </>
