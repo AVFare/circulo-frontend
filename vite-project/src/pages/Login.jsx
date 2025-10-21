@@ -8,13 +8,17 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Alert,
 } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -22,8 +26,54 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Login:", form);
-    navigate("/inicio");
+    setError("");
+    setLoading(true);
+
+    const datosAEnviar = {
+      email: form.email,
+      password: form.password,
+    };
+
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datosAEnviar),
+    };
+
+    const URL = "http://localhost:4002/api/v1/auth/login";
+
+    fetch(URL, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error al iniciar sesión");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Login exitoso:", data);
+
+        // Guardar el token en localStorage
+        localStorage.setItem("access_token", data.access_token);
+
+        // Guardar información del usuario (añadir role si viene del backend)
+        const userInfo = {
+          email: form.email,
+          role: data.role,
+        };
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+        // Redirigir al home (ajusta la ruta según tu app)
+        navigate("/inicio");
+      })
+      .catch((error) => {
+        console.error("Error al iniciar sesión: ", error);
+        setError("Credenciales inválidas. Intenta nuevamente.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
@@ -78,6 +128,18 @@ export default function Login() {
             Bienvenido de nuevo
           </Typography>
 
+          {location.state && location.state.registered && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Registro exitoso. Podés iniciar sesión ahora.
+            </Alert>
+          )}
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
               <TextField
@@ -89,6 +151,7 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 variant="outlined"
+                disabled={loading}
               />
               <TextField
                 fullWidth
@@ -99,6 +162,7 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 variant="outlined"
+                disabled={loading}
               />{" "}{/*  <TextField
                 select
                 fullWidth
@@ -118,8 +182,9 @@ export default function Login() {
                 color="primary"
                 size="large"
                 sx={{ mt: 2 }}
+                disabled={loading}
               >
-                Iniciar sesión
+                {loading ? "Iniciando..." : "Iniciar sesión"}
               </Button>
             </Stack>
           </form>
