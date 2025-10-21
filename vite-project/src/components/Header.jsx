@@ -61,7 +61,7 @@ export default function Header() {
         <Toolbar disableGutters>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
             {/* Mostrar AdminDrawer solo para usuarios admin */}
-            {user && user.role === 'admin' && (
+            {user && user.role === 'ADMIN' && (
               <AdminDrawer onNavigate={(section) => {
                 // Aquí podrías manejar la navegación o abrir modales según la sección
               }} />
