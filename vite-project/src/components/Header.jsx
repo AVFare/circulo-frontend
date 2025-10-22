@@ -1,7 +1,8 @@
-import { AppBar, Toolbar, Typography, Box, InputBase, alpha, Container } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, InputBase, alpha, Container, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
-import { Link } from 'react-router-dom';
+import ClearIcon from '@mui/icons-material/Clear';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 import { useState, useEffect } from 'react';
 import AdminDrawer from './admin/AdminDrawer';
@@ -19,13 +20,13 @@ const Search = styled('div')(({ theme }) => ({
     marginLeft: theme.spacing(3),
     width: 'auto',
   },
+  display: 'flex',
+  alignItems: 'center',
 }));
 
 const SearchIconWrapper = styled('div')(({ theme }) => ({
   padding: theme.spacing(0, 2),
   height: '100%',
-  position: 'absolute',
-  pointerEvents: 'none',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -33,6 +34,7 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit',
+  width: '100%',
   '& .MuiInputBase-input': {
     padding: theme.spacing(1, 1, 1, 0),
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
@@ -44,8 +46,12 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-export default function Header() {
+export default function Header({ onSearch }) {
   const [user, setUser] = useState(null);
+  const [searchValue, setSearchValue] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isHomePage = location.pathname === '/inicio';
 
   useEffect(() => {
     // Recuperar datos de usuario del localStorage
@@ -54,6 +60,37 @@ export default function Header() {
       setUser(JSON.parse(userData));
     }
   }, []);
+
+  const handleSearchChange = (e) => {
+    setSearchValue(e.target.value);
+  };
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter' && searchValue.trim()) {
+      if (isHomePage && onSearch) {
+        onSearch(searchValue.trim());
+      } else {
+        navigate(`/inicio?search=${encodeURIComponent(searchValue.trim())}`);
+      }
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchValue('');
+    if (isHomePage && onSearch) {
+      onSearch('');
+    }
+  };
+
+  const handleSearchClick = () => {
+    if (searchValue.trim()) {
+      if (isHomePage && onSearch) {
+        onSearch(searchValue.trim());
+      } else {
+        navigate(`/inicio?search=${encodeURIComponent(searchValue.trim())}`);
+      }
+    }
+  };
 
   return (
     <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
@@ -88,12 +125,30 @@ export default function Header() {
             {/* buscador !!!!! */}
             <Search>
               <SearchIconWrapper>
-                <SearchIcon />
+                <IconButton 
+                  size="small" 
+                  onClick={handleSearchClick}
+                  sx={{ color: 'inherit' }}
+                >
+                  <SearchIcon />
+                </IconButton>
               </SearchIconWrapper>
               <StyledInputBase
                 placeholder="Buscar productos ecológicos..."
                 inputProps={{ 'aria-label': 'buscar' }}
+                value={searchValue}
+                onChange={handleSearchChange}
+                onKeyPress={handleSearchSubmit}
               />
+              {searchValue && (
+                <IconButton 
+                  size="small" 
+                  onClick={handleClearSearch}
+                  sx={{ color: 'inherit', mr: 1 }}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              )}
             </Search>
           </Box>
 

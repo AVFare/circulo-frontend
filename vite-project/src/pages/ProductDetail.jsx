@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
-import { products } from "../mock/products.js";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -19,6 +18,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
@@ -31,13 +31,53 @@ export default function ProductDetail() {
   const { addToCart } = useOutletContext();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const product = products.find((x) => String(x.id) === id);
+  useEffect(() => {
+    setLoading(true);
+    setError('');
 
-  if (!product) {
+    const URL = `http://localhost:4002/api/item/catalog/products/${id}`;
+
+    const options = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    fetch(URL, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Producto no encontrado');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setProduct(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error al obtener el producto: ', error);
+        setError('No se pudo cargar el producto');
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Container sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (error || !product) {
     return (
       <Container sx={{ py: 4 }}>
-        <Typography variant="h6">Producto no encontrado.</Typography>
+        <Typography variant="h6" color="error">{error || 'Producto no encontrado'}</Typography>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate("/inicio")}
