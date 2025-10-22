@@ -15,6 +15,7 @@ export default function CheckoutCustomerForm({ initialData, onSubmit }) {
     email: '',
     phone: '',
     address: '',
+    address2: '',
     city: '',
     zipCode: ''
   });
@@ -136,6 +137,17 @@ export default function CheckoutCustomerForm({ initialData, onSubmit }) {
             onChange={handleChange}
             error={!!errors.address}
             helperText={errors.address}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Dirección 2 (Opcional)"
+            name="address2"
+            value={formData.address2}
+            onChange={handleChange}
+            placeholder="Ej: Lote 22, Apartamento 8C, Torre B, etc."
+            helperText="Información adicional para el envío"
           />
         </Grid>
         <Grid item xs={12} sm={6}>

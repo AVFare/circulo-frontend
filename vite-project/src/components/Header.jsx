@@ -6,6 +6,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 import { useState, useEffect } from 'react';
 import AdminDrawer from './admin/AdminDrawer';
+import UserMenu from './UserMenu';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -152,7 +153,7 @@ export default function Header({ onSearch }) {
             </Search>
           </Box>
 
-          <Box sx={{ flexGrow: 1 }} />
+          <UserMenu />
         </Toolbar>
       </Container>
     </AppBar>

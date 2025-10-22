@@ -6,8 +6,10 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import CategoryIcon from '@mui/icons-material/Category';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import CloseIcon from '@mui/icons-material/Close';
 import ProductForm from './ProductForm';
+import OrderList from './OrderList';
 
 const drawerWidth = 280;
 
@@ -126,6 +128,17 @@ export default function AdminPanel() {
           
           <ListItem 
             button 
+            selected={activeSection === 'orders'} 
+            onClick={() => handleSectionChange('orders')}
+          >
+            <ListItemIcon>
+              <ShoppingBagIcon />
+            </ListItemIcon>
+            <ListItemText primary="Órdenes" />
+          </ListItem>
+          
+          <ListItem 
+            button 
             selected={activeSection === 'users'} 
             onClick={() => handleSectionChange('users')}
           >
@@ -148,6 +161,10 @@ export default function AdminPanel() {
         
         {activeSection === 'categories' && (
           <Typography variant="h4">Gestión de Categorías</Typography>
+        )}
+        
+        {activeSection === 'orders' && (
+          <OrderList />
         )}
         
         {activeSection === 'users' && (

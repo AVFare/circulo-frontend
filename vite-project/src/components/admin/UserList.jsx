@@ -11,54 +11,121 @@ import {
   TableRow,
   IconButton,
   Tooltip,
-  TablePagination,
   Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   Grid,
   Divider,
+  CircularProgress,
+  Alert,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import LoginIcon from '@mui/icons-material/Login';
+import HomeIcon from '@mui/icons-material/Home';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import LastPageIcon from '@mui/icons-material/LastPage';
-import { users } from '../../mock/users';
-import { orders } from '../../mock/orders';
 
 export default function UserList() {
   const [userList, setUserList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userOrders, setUserOrders] = useState([]);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
 
   useEffect(() => {
-    setUserList(users);
-  }, []);
+    fetchUsers();
+  }, [page, rowsPerPage]);
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+  const fetchUsers = () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setError('No se encontró token de autenticación');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const options = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    };
+
+    const url = `http://localhost:4002/api/user/users?page=${page}&size=${rowsPerPage}&sortBy=id&sortDirection=asc`;
+
+    fetch(url, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Error al cargar usuarios');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setUserList(data.content || []);
+        setTotalPages(data.totalPages || 0);
+        setTotalElements(data.totalElements || 0);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error al obtener usuarios:', error);
+        setError('No se pudieron cargar los usuarios');
+        setLoading(false);
+      });
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+  const fetchUserDetails = (userId) => {
+    const token = localStorage.getItem('access_token');
+    const options = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    };
+
+    fetch(`http://localhost:4002/api/user/users/${userId}`, options)
+      .then((response) => response.json())
+      .then((user) => {
+        setSelectedUser(user);
+        setDetailModalOpen(true);
+        
+        setLoadingOrders(true);
+        fetch(`http://localhost:4002/api/action/orders?page=0&size=100`, options)
+          .then((response) => response.json())
+          .then((data) => {
+            const filteredOrders = (data.content || []).filter(order => order.userId === userId);
+            setUserOrders(filteredOrders);
+            setLoadingOrders(false);
+          })
+          .catch((error) => {
+            console.error('Error al obtener órdenes del usuario:', error);
+            setUserOrders([]);
+            setLoadingOrders(false);
+          });
+      })
+      .catch((error) => {
+        console.error('Error al obtener detalles del usuario:', error);
+      });
   };
 
   const handleViewDetails = (user) => {
-    setSelectedUser(user);
-    // Filtrar órdenes del usuario
-    const userOrdersList = orders.filter(order => order.userId === user.id);
-    setUserOrders(userOrdersList);
-    setDetailModalOpen(true);
+    fetchUserDetails(user.id);
   };
 
   const handleCloseModal = () => {
@@ -67,82 +134,73 @@ export default function UserList() {
     setUserOrders([]);
   };
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'admin':
-        return 'error';
-      case 'seller':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
+  if (loading && userList.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('es-AR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  if (error) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  const paginatedUsers = userList;
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5">Gestión de Usuarios</Typography>
-        <Chip 
-          label={`${userList.length} usuarios registrados`}
-          color="primary"
-          variant="outlined"
-        />
-      </Box>
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        Gestión de Usuarios
+      </Typography>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: 'primary.light' }}>
+            <TableRow>
               <TableCell>ID</TableCell>
               <TableCell>Usuario</TableCell>
               <TableCell>Nombre</TableCell>
+              <TableCell>Apellido</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Rol</TableCell>
-              <TableCell>Registrado</TableCell>
               <TableCell align="center">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {userList
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((user) => (
-                <TableRow key={user.id} hover>
-                  <TableCell>{user.id}</TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{`${user.firstname} ${user.lastname}`}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={user.role.toUpperCase()} 
-                      color={getRoleColor(user.role)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{formatDate(user.registeredAt)}</TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Ver detalles">
-                      <IconButton 
-                        color="primary" 
-                        onClick={() => handleViewDetails(user)}
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
+            {paginatedUsers.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>{user.id}</TableCell>
+                <TableCell>@{user.name}</TableCell>
+                <TableCell>{user.firstName || user.firstname}</TableCell>
+                <TableCell>{user.lastName || user.lastname}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={user.role || 'USER'}
+                    color={user.role === 'ADMIN' ? 'primary' : 'default'}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Tooltip title="Ver detalles">
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleViewDetails(user)}
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
+
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderTop: 1, borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Tooltip title="Primera página">
@@ -159,8 +217,8 @@ export default function UserList() {
             <Tooltip title="Última página">
               <span>
                 <IconButton 
-                  onClick={() => setPage(Math.max(0, Math.ceil(userList.length / rowsPerPage) - 1))} 
-                  disabled={page >= Math.ceil(userList.length / rowsPerPage) - 1}
+                  onClick={() => setPage(totalPages - 1)} 
+                  disabled={page >= totalPages - 1}
                   size="small"
                 >
                   <LastPageIcon />
@@ -168,167 +226,152 @@ export default function UserList() {
               </span>
             </Tooltip>
           </Box>
-          <TablePagination
-            component="div"
-            count={userList.length}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por página:"
-            sx={{ border: 'none' }}
-          />
+          <Typography variant="body2">
+            Página {page + 1} de {totalPages} - Total: {totalElements} usuarios
+          </Typography>
         </Box>
       </TableContainer>
 
       {/* Modal de detalles del usuario */}
-      <Dialog 
+      <Dialog
         open={detailModalOpen}
         onClose={handleCloseModal}
         fullWidth
         maxWidth="md"
       >
-        <DialogTitle sx={{ 
-          bgcolor: 'primary.main', 
+        <DialogTitle sx={{
+          bgcolor: 'primary.main',
           color: 'white',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
           Detalles del Usuario
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseModal}
-            sx={{ color: 'white' }}
-          >
+          <IconButton onClick={handleCloseModal} sx={{ color: 'white' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           {selectedUser && (
-            <Box>
-              {/* Información del usuario */}
-              <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PersonIcon />
-                  Información Personal
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Usuario</Typography>
-                    <Typography variant="body1" fontWeight={600}>{selectedUser.username}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Nombre Completo</Typography>
-                    <Typography variant="body1" fontWeight={600}>
-                      {`${selectedUser.firstname} ${selectedUser.lastname}`}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <EmailIcon color="action" fontSize="small" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Email</Typography>
-                        <Typography variant="body1">{selectedUser.email}</Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PhoneIcon color="action" fontSize="small" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Teléfono</Typography>
-                        <Typography variant="body1">{selectedUser.phone}</Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LocationOnIcon color="action" fontSize="small" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Dirección</Typography>
-                        <Typography variant="body1">
-                          {`${selectedUser.address}, ${selectedUser.city}, CP: ${selectedUser.zipCode}`}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CalendarTodayIcon color="action" fontSize="small" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Fecha de Registro</Typography>
-                        <Typography variant="body1">{formatDate(selectedUser.registeredAt)}</Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LoginIcon color="action" fontSize="small" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Último Acceso</Typography>
-                        <Typography variant="body1">{formatDate(selectedUser.lastLogin)}</Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="body2" color="text.secondary">Rol</Typography>
-                    <Chip 
-                      label={selectedUser.role.toUpperCase()} 
-                      color={getRoleColor(selectedUser.role)}
-                      sx={{ mt: 0.5 }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
-
-              {/* Órdenes del usuario */}
-              <Paper elevation={2} sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Historial de Órdenes ({userOrders.length})
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                {userOrders.length > 0 ? (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <PersonIcon sx={{ mr: 2, color: 'primary.main' }} />
                   <Box>
-                    {userOrders.map((order) => (
-                      <Box 
-                        key={order.id} 
-                        sx={{ 
-                          p: 2, 
-                          mb: 2, 
-                          border: '1px solid', 
-                          borderColor: 'divider',
-                          borderRadius: 1 
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            Orden #{order.id}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {formatDate(order.orderDate)}
-                          </Typography>
-                        </Box>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          {order.items.length} producto(s) - Total: ${order.total.toLocaleString('es-AR')}
-                        </Typography>
-                        <Chip 
-                          label={order.status.toUpperCase()} 
-                          size="small"
-                          color={order.status === 'delivered' ? 'success' : 
-                                 order.status === 'cancelled' ? 'error' : 'warning'}
-                        />
-                      </Box>
-                    ))}
+                    <Typography variant="caption" color="text.secondary">
+                      Usuario
+                    </Typography>
+                    <Typography variant="h6">
+                      @{selectedUser.name}
+                    </Typography>
                   </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    Este usuario no tiene órdenes registradas.
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <PersonIcon sx={{ mr: 2, color: 'text.secondary' }} />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Nombre
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedUser.firstName || selectedUser.firstname}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <PersonIcon sx={{ mr: 2, color: 'text.secondary' }} />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Apellido
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedUser.lastName || selectedUser.lastname}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <EmailIcon sx={{ mr: 2, color: 'text.secondary' }} />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Email
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedUser.email}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+
+              {selectedUser.phoneNumber && (
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <PhoneIcon sx={{ mr: 2, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Teléfono
+                      </Typography>
+                      <Typography variant="body1">
+                        {selectedUser.phoneNumber}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+
+              {selectedUser.address && (
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <HomeIcon sx={{ mr: 2, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Dirección
+                      </Typography>
+                      <Typography variant="body1">
+                        {selectedUser.address}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <ShoppingBagIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Órdenes del Usuario
                   </Typography>
+                </Box>
+                {loadingOrders ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : userOrders.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Este usuario no tiene órdenes
+                  </Typography>
+                ) : (
+                  <List>
+                    {userOrders.map((order) => (
+                      <ListItem key={order.id}>
+                        <ListItemText
+                          primary={`Orden #${order.id}`}
+                          secondary={`Fecha: ${order.orderDate ? new Date(order.orderDate).toLocaleDateString('es-AR') : 'N/A'} - Total: $${order.importeTotal?.toLocaleString('es-AR') || '0'} - ${order.paymentMethod || 'N/A'}`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
                 )}
-              </Paper>
-            </Box>
+              </Grid>
+            </Grid>
           )}
         </DialogContent>
       </Dialog>

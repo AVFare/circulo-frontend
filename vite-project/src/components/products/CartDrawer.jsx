@@ -13,12 +13,34 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
+import ImageIcon from '@mui/icons-material/Image';
 import { useState } from 'react';
 import CheckoutFlow from '../payments/CheckoutFlow';
 
 export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty, clearCart }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const total = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+
+  const getImageSrc = (imageData) => {
+    if (!imageData) return null;
+
+    try {
+      // Decodificar el string base64 que viene del backend
+      const decodedData = atob(imageData);
+      // Extraer la parte después del prefijo 'data:image/'
+      const dataIndex = decodedData.indexOf('data:image/');
+      if (dataIndex !== -1) {
+        // Si encuentra el prefijo, retorna el string decodificado
+        return decodedData;
+      } else {
+        // Si no encuentra el prefijo, asume que es un base64 puro y añade el prefijo
+        return `data:image/png;base64,${imageData}`;
+      }
+    } catch (error) {
+      console.error('Error procesando imagen:', error);
+      return null;
+    }
+  };
 
   const handleCheckout = () => {
     setCheckoutOpen(true);
@@ -80,18 +102,34 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                   }}
                 >
                   <Stack direction="row" spacing={2}>
-                    {/* Imagen :D  */}
+                    {/* Imagen del producto */}
                     <Box
-                      component="img"
-                      src={item.img}
-                      alt={item.name}
                       sx={{
                         width: 80,
                         height: 80,
                         borderRadius: 1,
-                        objectFit: 'cover',
+                        bgcolor: 'grey.100',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
                       }}
-                    />
+                    >
+                      {item.imageData ? (
+                        <Box
+                          component="img"
+                          src={getImageSrc(item.imageData)}
+                          alt={item.name}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      ) : (
+                        <ImageIcon sx={{ fontSize: 40, color: 'grey.400' }} />
+                      )}
+                    </Box>
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
                         {item.name}
