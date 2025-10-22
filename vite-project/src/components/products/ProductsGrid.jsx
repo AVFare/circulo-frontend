@@ -9,10 +9,33 @@ export default function ProductsGrid({ products = [], viewMode = 'grid' }) {
     : { xs: 12, sm: 6, md: 3, lg: 3, xl: 3 };
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Grid container spacing={2}>
-        {products.map((product) => (
-          <Grid key={product.id} item {...gridSize}>
+    <Box sx={{ width: '100%', padding: '0 32px' }}>
+      <Grid 
+        container 
+        spacing={2}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, 300px)', // Tamaño fijo de card
+          gap: '32px',
+          justifyContent: 'center', // Centra las cards cuando no caben todas
+          '& > .MuiGrid-item': {
+            width: '300px', // Ancho fijo para cada item
+            margin: 0,
+            display: 'flex',
+            justifyContent: 'center',
+          }
+        }}
+      >
+        {products.slice(0, 12).map((product) => ( // Limitar a 12 productos
+          <Grid 
+            key={product.id} 
+            item
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              width: '100%',
+            }}
+          >
             <ProductCard product={product} viewMode={viewMode} />
           </Grid>
         ))}
