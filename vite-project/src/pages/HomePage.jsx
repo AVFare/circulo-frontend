@@ -64,6 +64,11 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Establecer título de la página
+  useEffect(() => {
+    document.title = 'Catálogo - CÍRCULO';
+  }, []);
+
   // Sincronizar búsqueda desde URL params
   useEffect(() => {
     const searchFromUrl = searchParams.get('search');

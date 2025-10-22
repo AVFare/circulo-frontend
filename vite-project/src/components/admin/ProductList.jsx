@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -16,15 +17,20 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
   Chip,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import ProductForm from './ProductForm';
 
-export default function ProductList() {
+export default function ProductList({ onCloseDrawer }) {
+  const navigate = useNavigate();
   const [productList, setProductList] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -33,6 +39,11 @@ export default function ProductList() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [totalElements, setTotalElements] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   useEffect(() => {
     // Panel de admin: usa el endpoint que devuelve TODOS los productos (sin filtrar por status)
@@ -64,10 +75,47 @@ export default function ProductList() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este producto?')) {
-      // En un caso real, enviaríamos una solicitud de eliminación a la API
-      setProductList(productList.filter(product => product.id !== id));
+    setProductToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      
+      // Soft delete: cambiar estado a DELETED
+      const response = await fetch(`http://localhost:4002/api/item/products/${productToDelete}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: 2 }) // 2 = DELETED
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar producto');
+      }
+
+      // Recargar la lista
+      setRefreshTrigger(prev => prev + 1);
+      setSnackbarMessage('Producto eliminado exitosamente');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Error al eliminar producto:', error);
+      setSnackbarMessage('Error al eliminar el producto: ' + error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setProductToDelete(null);
   };
 
   const handleEdit = (product) => {
@@ -116,11 +164,10 @@ export default function ProductList() {
             <TableRow sx={{ bgcolor: 'primary.light' }}>
               <TableCell>ID</TableCell>
               <TableCell>Nombre</TableCell>
+              <TableCell>Categoría</TableCell>
               <TableCell>Precio</TableCell>
               <TableCell>Stock</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Envío gratis</TableCell>
-              <TableCell>Ubicación</TableCell>
               <TableCell align="center">Acciones</TableCell>
             </TableRow>
           </TableHead>
@@ -131,6 +178,7 @@ export default function ProductList() {
                 <TableRow key={product.id} hover>
                   <TableCell>{product.id}</TableCell>
                   <TableCell>{product.name}</TableCell>
+                  <TableCell>{product.category || 'N/A'}</TableCell>
                   <TableCell>${product.price.toLocaleString('es-AR')}</TableCell>
                   <TableCell>{product.stock || 0}</TableCell>
                   <TableCell>
@@ -139,16 +187,24 @@ export default function ProductList() {
                       size="small"
                       color={
                         product.status === 'PUBLISHED' ? 'success' :
-                        product.status === 'PAUSED' ? 'warning' :
                         product.status === 'SOLD' ? 'info' :
                         product.status === 'DELETED' ? 'error' :
                         'default'
                       }
                     />
                   </TableCell>
-                  <TableCell>{product.freeShipping ? 'Sí' : 'No'}</TableCell>
-                  <TableCell>{product.location}</TableCell>
                   <TableCell align="center">
+                    <Tooltip title="Ver detalle">
+                      <IconButton 
+                        color="info" 
+                        onClick={() => {
+                          if (onCloseDrawer) onCloseDrawer();
+                          navigate(`/producto/${product.id}`);
+                        }}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Editar">
                       <IconButton color="primary" onClick={() => handleEdit(product)}>
                         <EditIcon />
@@ -237,6 +293,45 @@ export default function ProductList() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmación para eliminar */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCancelDelete}
+      >
+        <DialogTitle>
+          Confirmar eliminación
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            ¿Está seguro de que desea eliminar este producto? Se marcará como DELETED.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="inherit">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbarOpen(false)} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

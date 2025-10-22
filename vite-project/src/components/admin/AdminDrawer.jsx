@@ -172,7 +172,7 @@ export default function AdminDrawer({ onNavigate }) {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
-          <ProductList />
+          <ProductList onCloseDrawer={handleCloseProductListModal} />
         </DialogContent>
       </Dialog>
 
