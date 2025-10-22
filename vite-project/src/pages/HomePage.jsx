@@ -307,24 +307,6 @@ export default function HomePage() {
                 </FormControl>
               </Grid>
 
-              {/* Vista */}
-              <Grid item xs={6} sm={3} md={1.5}>
-                <ToggleButtonGroup
-                  value={viewMode}
-                  exclusive
-                  onChange={(e, newView) => newView && setViewMode(newView)}
-                  size="small"
-                  fullWidth
-                >
-                  <ToggleButton value="grid">
-                    <GridViewIcon fontSize="small" />
-                  </ToggleButton>
-                  <ToggleButton value="list">
-                    <ViewListIcon fontSize="small" />
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Grid>
-
               {/* Limpiar */}
               <Grid item xs={12} sm={12} md={1.5}>
                 <Button
