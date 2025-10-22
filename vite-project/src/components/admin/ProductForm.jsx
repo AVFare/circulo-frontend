@@ -32,12 +32,6 @@ const categories = [
   { id: 6, name: 'MALLAS' },
 ];
 
-const statusOptions = [
-  { id: 0, name: 'PUBLISHED' },
-  { id: 1, name: 'PAUSED' },
-  { id: 2, name: 'SOLD' },
-];
-
 export default function ProductForm({ product, onSubmit, onClose }) {
   const [formData, setFormData] = useState(
     product || {
@@ -47,7 +41,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       discount: 0,
       stock: '',
       category: 0,
-      status: 0,
       imageName: '',
       imageData: '',
     }
@@ -152,7 +145,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
-        status: parseInt(formData.status),
+        status: 0, // Siempre PUBLISHED al crear
         stock: parseInt(formData.stock),
         discount: parseInt(formData.discount) || 0,
         category: parseInt(formData.category),
@@ -209,7 +202,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
           discount: 0,
           stock: '',
           category: 0,
-          status: 0,
           imageName: '',
           imageData: '',
         });
@@ -422,30 +414,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                   {categories.map((cat) => (
                     <MenuItem key={cat.id} value={cat.id}>
                       {cat.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  select
-                  name="status"
-                  label="Estado"
-                  value={formData.status}
-                  onChange={handleChange}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LabelIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                >
-                  {statusOptions.map((status) => (
-                    <MenuItem key={status.id} value={status.id}>
-                      {status.name}
                     </MenuItem>
                   ))}
                 </TextField>
