@@ -16,12 +16,12 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Chip,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import { products } from '../../mock/products';
 import ProductForm from './ProductForm';
 
 export default function ProductList() {
@@ -31,11 +31,28 @@ export default function ProductList() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [totalElements, setTotalElements] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    // En un caso real, cargaríamos los productos desde la API
-    setProductList(products);
-  }, []);
+    // Panel de admin: usa el endpoint que devuelve TODOS los productos (sin filtrar por status)
+    fetch('http://localhost:4002/api/item/catalog/products', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Error al cargar productos');
+        return response.json();
+      })
+      .then((data) => {
+        // Como este endpoint no está paginado, manejamos la paginación en el frontend
+        setProductList(data);
+        setTotalElements(data.length);
+      })
+      .catch((error) => {
+        console.error('Error al cargar productos:', error);
+      });
+  }, [refreshTrigger]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -73,7 +90,8 @@ export default function ProductList() {
 
   const handleProductSubmit = (productData) => {
     console.log('Producto guardado:', productData);
-    // Aquí actualizarías la lista de productos
+    // Recargar la lista de productos
+    setRefreshTrigger(prev => prev + 1);
     handleCloseEditModal();
     handleCloseCreateModal();
   };
@@ -100,6 +118,7 @@ export default function ProductList() {
               <TableCell>Nombre</TableCell>
               <TableCell>Precio</TableCell>
               <TableCell>Stock</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Envío gratis</TableCell>
               <TableCell>Ubicación</TableCell>
               <TableCell align="center">Acciones</TableCell>
@@ -113,7 +132,20 @@ export default function ProductList() {
                   <TableCell>{product.id}</TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>${product.price.toLocaleString('es-AR')}</TableCell>
-                  <TableCell>{product.stock || 'N/A'}</TableCell>
+                  <TableCell>{product.stock || 0}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={product.status || 'PUBLISHED'}
+                      size="small"
+                      color={
+                        product.status === 'PUBLISHED' ? 'success' :
+                        product.status === 'PAUSED' ? 'warning' :
+                        product.status === 'SOLD' ? 'info' :
+                        product.status === 'DELETED' ? 'error' :
+                        'default'
+                      }
+                    />
+                  </TableCell>
                   <TableCell>{product.freeShipping ? 'Sí' : 'No'}</TableCell>
                   <TableCell>{product.location}</TableCell>
                   <TableCell align="center">
@@ -134,7 +166,7 @@ export default function ProductList() {
         </Table>
         <TablePagination
           component="div"
-          count={productList.length}
+          count={totalElements}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
@@ -167,7 +199,11 @@ export default function ProductList() {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
-          <ProductForm product={selectedProduct} onSubmit={handleProductSubmit} />
+          <ProductForm 
+            product={selectedProduct} 
+            onSubmit={handleProductSubmit}
+            onClose={handleCloseEditModal}
+          />
         </DialogContent>
       </Dialog>
 
@@ -195,7 +231,10 @@ export default function ProductList() {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
-          <ProductForm onSubmit={handleProductSubmit} />
+          <ProductForm 
+            onSubmit={handleProductSubmit}
+            onClose={handleCloseCreateModal}
+          />
         </DialogContent>
       </Dialog>
     </Box>

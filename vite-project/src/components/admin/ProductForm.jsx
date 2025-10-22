@@ -11,6 +11,8 @@ import {
   InputAdornment,
   Alert,
   Divider,
+  CircularProgress,
+  CardMedia,
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import LabelIcon from '@mui/icons-material/Label';
@@ -18,16 +20,25 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PercentIcon from '@mui/icons-material/Percent';
 import SaveIcon from '@mui/icons-material/Save';
+import ImageIcon from '@mui/icons-material/Image';
 
 const categories = [
-  { id: 1, name: 'Remeras' },
-  { id: 2, name: 'Pantalones' },
-  { id: 3, name: 'Vestidos' },
-  { id: 4, name: 'Calzado' },
-  { id: 5, name: 'Abrigos' },
+  { id: 0, name: 'REMERAS' },
+  { id: 1, name: 'PANTALONES' },
+  { id: 2, name: 'VESTIDOS' },
+  { id: 3, name: 'MEDIAS' },
+  { id: 4, name: 'CALZADO' },
+  { id: 5, name: 'ABRIGO' },
+  { id: 6, name: 'MALLAS' },
 ];
 
-export default function ProductForm({ product, onSubmit }) {
+const statusOptions = [
+  { id: 0, name: 'PUBLISHED' },
+  { id: 1, name: 'PAUSED' },
+  { id: 2, name: 'SOLD' },
+];
+
+export default function ProductForm({ product, onSubmit, onClose }) {
   const [formData, setFormData] = useState(
     product || {
       name: '',
@@ -35,11 +46,16 @@ export default function ProductForm({ product, onSubmit }) {
       price: '',
       discount: 0,
       stock: '',
-      category: '',
+      category: 0,
+      status: 0,
+      imageName: '',
+      imageData: '',
     }
   );
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,6 +65,37 @@ export default function ProductForm({ product, onSubmit }) {
     });
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
+    }
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        setErrors({ ...errors, image: 'Por favor selecciona una imagen válida' });
+        return;
+      }
+
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors({ ...errors, image: 'La imagen no puede superar los 5MB' });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFormData(prev => ({
+          ...prev,
+          imageName: file.name,
+          imageData: reader.result, // Base64 string
+        }));
+        setErrors({ ...errors, image: '' });
+      };
+      reader.onerror = () => {
+        setErrors({ ...errors, image: 'Error al cargar la imagen' });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -70,24 +117,111 @@ export default function ProductForm({ product, onSubmit }) {
     )
       newErrors.discount = 'El descuento debe ser entre 0 y 100';
 
-    if (!formData.stock) newErrors.stock = 'El stock es obligatorio';
+    if (!formData.stock && formData.stock !== 0) newErrors.stock = 'El stock es obligatorio';
     else if (isNaN(formData.stock) || Number(formData.stock) < 0)
       newErrors.stock = 'El stock debe ser mayor o igual a 0';
 
-    if (!formData.category) newErrors.category = 'La categoría es obligatoria';
+    if (formData.category === '') newErrors.category = 'La categoría es obligatoria';
+
+    if (!formData.imageData && !product) newErrors.image = 'La imagen es obligatoria';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      if (onSubmit) onSubmit(formData);
-      else {
-        console.log('Producto guardado:', formData);
-        alert('Producto guardado correctamente');
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    setSuccessMessage('');
+
+    try {
+      const token = localStorage.getItem('access_token');
+      
+      if (!token) {
+        setErrors({ submit: 'No se encontró token de autenticación. Por favor inicia sesión nuevamente.' });
+        setLoading(false);
+        return;
       }
+
+      const itemDto = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        status: parseInt(formData.status),
+        stock: parseInt(formData.stock),
+        discount: parseInt(formData.discount) || 0,
+        category: parseInt(formData.category),
+        imageName: formData.imageName,
+        imageData: formData.imageData ? formData.imageData.split(',')[1] : '', // Enviar solo la parte Base64, sin el prefijo
+      };
+
+      // Debug temporal
+      console.log('ImageName:', itemDto.imageName);
+      console.log('ImageData length:', itemDto.imageData?.length || 0);
+      console.log('ImageData preview:', itemDto.imageData ? itemDto.imageData.substring(0, 50) : 'EMPTY');
+      console.log('ItemDto completo (sin imageData):', {
+        ...itemDto,
+        imageData: itemDto.imageData ? `[${itemDto.imageData.length} chars]` : 'null'
+      });
+
+      const response = await fetch('http://localhost:4002/api/item/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(itemDto)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        
+        let errorMessage = 'Error al crear producto';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData?.message || errorData?.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(`${errorMessage} (Status: ${response.status})`);
+      }
+
+      const createdProduct = await response.json();
+      setSuccessMessage('¡Producto creado exitosamente!');
+      
+      // Llamar al callback onSubmit si existe
+      if (onSubmit) {
+        onSubmit(createdProduct);
+      }
+
+      // Limpiar formulario después de 2 segundos
+      setTimeout(() => {
+        setFormData({
+          name: '',
+          description: '',
+          price: '',
+          discount: 0,
+          stock: '',
+          category: 0,
+          status: 0,
+          imageName: '',
+          imageData: '',
+        });
+        setSuccessMessage('');
+        if (onClose) onClose();
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error al crear producto:', error);
+      setErrors({ submit: error.message });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -285,7 +419,6 @@ export default function ProductForm({ product, onSubmit }) {
                     ),
                   }}
                 >
-                  <MenuItem value="">Selecciona una categoría</MenuItem>
                   {categories.map((cat) => (
                     <MenuItem key={cat.id} value={cat.id}>
                       {cat.name}
@@ -293,6 +426,80 @@ export default function ProductForm({ product, onSubmit }) {
                   ))}
                 </TextField>
               </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  select
+                  name="status"
+                  label="Estado"
+                  value={formData.status}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LabelIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                >
+                  {statusOptions.map((status) => (
+                    <MenuItem key={status.id} value={status.id}>
+                      {status.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    fullWidth
+                    startIcon={<ImageIcon />}
+                    sx={{ py: 2, borderStyle: 'dashed' }}
+                  >
+                    {formData.imageName || 'Seleccionar Imagen'}
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
+                  </Button>
+                  {errors.image && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                      {errors.image}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+
+              {formData.imageData && (
+                <Grid item xs={12}>
+                  <Card sx={{ maxWidth: 300, mx: 'auto' }}>
+                    <CardMedia
+                      component="img"
+                      image={formData.imageData}
+                      alt="Preview"
+                      sx={{ height: 200, objectFit: 'cover' }}
+                    />
+                  </Card>
+                </Grid>
+              )}
+
+              {successMessage && (
+                <Grid item xs={12}>
+                  <Alert severity="success">{successMessage}</Alert>
+                </Grid>
+              )}
+
+              {errors.submit && (
+                <Grid item xs={12}>
+                  <Alert severity="error">{errors.submit}</Alert>
+                </Grid>
+              )}
             </Grid>
           </CardContent>
 
@@ -305,9 +512,10 @@ export default function ProductForm({ product, onSubmit }) {
               size="large"
               fullWidth
               onClick={handleSubmit}
-              startIcon={<SaveIcon />}
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+              disabled={loading}
             >
-              Guardar Producto
+              {loading ? 'Guardando...' : 'Guardar Producto'}
             </Button>
           </Box>
         </Card>

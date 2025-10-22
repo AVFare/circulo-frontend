@@ -24,6 +24,7 @@ import {
 import ClearIcon from '@mui/icons-material/Clear';
 import GridViewIcon from '@mui/icons-material/GridView';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ProductsGrid from '../components/products/ProductsGrid.jsx';
 
 const CATEGORIES = [
@@ -47,6 +48,7 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [showOnlyDiscounted, setShowOnlyDiscounted] = useState(false);
   const [sortBy, setSortBy] = useState('id');
   const [sortDirection, setSortDirection] = useState('asc');
   const [viewMode, setViewMode] = useState('grid');
@@ -87,6 +89,9 @@ export default function HomePage() {
     if (selectedCategory) params.append('category', selectedCategory);
     if (minPrice) params.append('minPrice', minPrice);
     if (maxPrice) params.append('maxPrice', maxPrice);
+    if (showOnlyDiscounted) params.append('hasDiscount', 'true');
+    // Catálogo público: solo mostrar productos con stock
+    params.append('inStock', 'true');
 
     const URL = `http://localhost:4002/api/item/catalog/products/search?${params.toString()}`;
 
@@ -109,13 +114,14 @@ export default function HomePage() {
         setError('Error al cargar los productos. Intenta nuevamente.');
         setLoading(false);
       });
-  }, [currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice]);
+  }, [currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted]);
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedCategory('');
     setMinPrice('');
     setMaxPrice('');
+    setShowOnlyDiscounted(false);
     setSortBy('id');
     setSortDirection('asc');
     setCurrentPage(0);
@@ -125,6 +131,15 @@ export default function HomePage() {
     const value = e.target.value;
     if (value === 'price-asc') {
       setSortBy('price');
+      setSortDirection('asc');
+    } else if (value === 'price-desc') {
+      setSortBy('price');
+      setSortDirection('desc');
+    } else if (value === 'discount-desc') {
+      setSortBy('discount');
+      setSortDirection('desc');
+    } else if (value === 'discount-asc') {
+      setSortBy('discount');
       setSortDirection('asc');
     } else if (value === 'price-desc') {
       setSortBy('price');
@@ -155,12 +170,14 @@ export default function HomePage() {
   const getSortValue = () => {
     if (sortBy === 'price' && sortDirection === 'asc') return 'price-asc';
     if (sortBy === 'price' && sortDirection === 'desc') return 'price-desc';
+    if (sortBy === 'discount' && sortDirection === 'desc') return 'discount-desc';
+    if (sortBy === 'discount' && sortDirection === 'asc') return 'discount-asc';
     if (sortBy === 'name' && sortDirection === 'asc') return 'name-asc';
     if (sortBy === 'name' && sortDirection === 'desc') return 'name-desc';
     return 'default';
   };
 
-  const activeFiltersCount = [searchTerm, selectedCategory, minPrice, maxPrice].filter(Boolean).length;
+  const activeFiltersCount = [searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted].filter(Boolean).length;
 
   return (
     <Box sx={{ py: 4, minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -248,10 +265,30 @@ export default function HomePage() {
                     <MenuItem value="default">Por defecto</MenuItem>
                     <MenuItem value="price-asc">Precio ↑</MenuItem>
                     <MenuItem value="price-desc">Precio ↓</MenuItem>
+                    <MenuItem value="discount-desc">Mayor Descuento</MenuItem>
+                    <MenuItem value="discount-asc">Menor Descuento</MenuItem>
                     <MenuItem value="name-asc">Nombre A-Z</MenuItem>
                     <MenuItem value="name-desc">Nombre Z-A</MenuItem>
                   </Select>
                 </FormControl>
+              </Grid>
+
+              {/* Filtro de descuento */}
+              <Grid item xs={6} sm={6} md={1.5}>
+                <Button
+                  fullWidth
+                  variant={showOnlyDiscounted ? "contained" : "outlined"}
+                  size="small"
+                  color={showOnlyDiscounted ? "success" : "primary"}
+                  onClick={() => {
+                    setShowOnlyDiscounted(!showOnlyDiscounted);
+                    setCurrentPage(0);
+                  }}
+                  startIcon={<LocalOfferIcon />}
+                  sx={{ height: '40px' }}
+                >
+                  {showOnlyDiscounted ? 'Con OFF' : 'Con OFF'}
+                </Button>
               </Grid>
 
               {/* Items por página */}
@@ -289,7 +326,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Limpiar */}
-              <Grid item xs={12} sm={12} md={2}>
+              <Grid item xs={12} sm={12} md={1.5}>
                 <Button
                   fullWidth
                   variant="outlined"
@@ -298,8 +335,9 @@ export default function HomePage() {
                   onClick={handleClearFilters}
                   startIcon={<ClearIcon />}
                   disabled={activeFiltersCount === 0}
+                  sx={{ height: '40px' }}
                 >
-                  Limpiar Filtros
+                  Limpiar
                 </Button>
               </Grid>
             </Grid>
@@ -341,6 +379,15 @@ export default function HomePage() {
                   onDelete={() => setMaxPrice('')}
                   color="primary"
                   size="small"
+                />
+              )}
+              {showOnlyDiscounted && (
+                <Chip
+                  label="Solo con descuento"
+                  onDelete={() => setShowOnlyDiscounted(false)}
+                  color="success"
+                  size="small"
+                  icon={<LocalOfferIcon />}
                 />
               )}
             </Stack>
