@@ -116,17 +116,35 @@ export default function ProductDetail() {
                 border: "1px solid rgba(0,0,0,0.08)",
               }}
             >
-              <Box
-                component="img"
-                src={product.img}
-                alt={product.name}
-                sx={{
-                  width: "100%",
-                  borderRadius: 2,
-                  objectFit: "cover",
-                  maxHeight: 500,
-                }}
-              />
+              {product.imageData ? (
+                <Box
+                  component="img"
+                  src={`data:image/png;base64,${product.imageData}`}
+                  alt={product.name}
+                  sx={{
+                    width: "100%",
+                    borderRadius: 2,
+                    objectFit: "cover",
+                    maxHeight: 500,
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: 500,
+                    borderRadius: 2,
+                    bgcolor: "grey.100",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography variant="h6" color="text.secondary">
+                    Sin imagen
+                  </Typography>
+                </Box>
+              )}
             </Paper>
           </Grid>
 
@@ -188,10 +206,7 @@ export default function ProductDetail() {
                   variant="body1"
                   sx={{ color: "text.secondary", lineHeight: 1.8 }}
                 >
-                  Producto eco-friendly de excelente calidad. Fabricado con
-                  materiales sustentables y procesos que respetan el medio
-                  ambiente. Ideal para quienes buscan un estilo de vida más
-                  consciente y responsable.
+                  {product.description || "Sin descripción disponible"}
                 </Typography>
               </Box>
 
