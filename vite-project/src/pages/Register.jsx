@@ -6,6 +6,7 @@ import {
   TextField,
   Button,
   Stack,
+  Alert,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import RecyclingIcon from "@mui/icons-material/Recycling";
@@ -18,8 +19,9 @@ export default function Register() {
     email: "",
     username: "",
     password: "",
-    role: "user",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -27,24 +29,60 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Registro:", form);
-      
-      // Guardar el token y el rol en localStorage
-      localStorage.setItem('form', form);
+    setError("");
+    setLoading(true);
 
-      
-      // Opcional: guardar también los datos del usuario (sin contraseña)
-      const userInfo = {
-        firstname: form.firstname,
-        lastname: form.lastname,
-        email: form.email,
-        username: form.username,
-        role:'admin'
-      };
-      localStorage.setItem('userInfo', JSON.stringify(userInfo));
-      
-      navigate("/");
-   
+    const datosAEnviar = {
+      firstname: form.firstname,
+      lastname: form.lastname,
+      email: form.email,
+      username: form.username,
+      password: form.password,
+    };
+
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datosAEnviar),
+    };
+
+    const URL = "http://localhost:4002/api/v1/auth/register";
+
+    fetch(URL, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error al registrar usuario");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Registro exitoso:", data);
+
+        // Guardar el token en localStorage
+        localStorage.setItem("access_token", data.access_token);
+
+        // Guardar información del usuario
+        const userInfo = {
+          firstname: form.firstname,
+          lastname: form.lastname,
+          email: form.email,
+          username: form.username,
+          role: data.role,
+        };
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+        // Redirigir al home
+        navigate("/");
+      })
+      .catch((error) => {
+        console.error("Error al obtener los datos: ", error);
+        setError("Error al registrar usuario. Intenta nuevamente.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
@@ -98,6 +136,12 @@ export default function Register() {
           Crear cuenta
         </Typography>
 
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <TextField
@@ -107,6 +151,7 @@ export default function Register() {
               value={form.firstname}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -116,6 +161,7 @@ export default function Register() {
               value={form.lastname}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -126,6 +172,7 @@ export default function Register() {
               value={form.email}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -135,6 +182,7 @@ export default function Register() {
               value={form.username}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -145,6 +193,7 @@ export default function Register() {
               value={form.password}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <Button
@@ -154,8 +203,9 @@ export default function Register() {
               color="primary"
               size="large"
               sx={{ mt: 2 }}
+              disabled={loading}
             >
-              Registrarse
+              {loading ? "Registrando..." : "Registrarse"}
             </Button>
           </Stack>
         </form>
