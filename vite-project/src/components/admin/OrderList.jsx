@@ -11,7 +11,6 @@ import {
   TableRow,
   IconButton,
   Tooltip,
-  TablePagination,
   Chip,
   Dialog,
   DialogTitle,
@@ -21,103 +20,179 @@ import {
   List,
   ListItem,
   ListItemText,
+  CircularProgress,
+  Alert,
+  Button,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PersonIcon from '@mui/icons-material/Person';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PaymentIcon from '@mui/icons-material/Payment';
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import LastPageIcon from '@mui/icons-material/LastPage';
-import { orders } from '../../mock/orders';
 
 export default function OrderList() {
   const [orderList, setOrderList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
-    setOrderList(orders);
-  }, []);
+    fetchOrders();
+  }, [page, rowsPerPage]);
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+  const fetchOrders = () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setError('No se encontró token de autenticación');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const options = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    };
+
+    const url = `http://localhost:4002/api/action/orders?page=${page}&size=${rowsPerPage}&sortBy=id&sortDirection=desc`;
+
+    fetch(url, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Error al cargar órdenes');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setOrderList(data.content || []);
+        setTotalPages(data.totalPages || 0);
+        setTotalElements(data.totalElements || 0);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error al obtener órdenes:', error);
+        setError('No se pudieron cargar las órdenes');
+        setLoading(false);
+      });
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+  const fetchUserDetails = (userId) => {
+    const token = localStorage.getItem('access_token');
+    const options = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    };
+
+    setLoadingUser(true);
+    fetch(`http://localhost:4002/api/user/users/${userId}`, options)
+      .then((response) => response.json())
+      .then((user) => {
+        setSelectedUser(user);
+        setLoadingUser(false);
+      })
+      .catch((error) => {
+        console.error('Error al obtener usuario:', error);
+        setSelectedUser(null);
+        setLoadingUser(false);
+      });
   };
 
   const handleViewDetails = (order) => {
     setSelectedOrder(order);
     setDetailModalOpen(true);
+    if (order.userId) {
+      fetchUserDetails(order.userId);
+    }
   };
 
   const handleCloseModal = () => {
     setDetailModalOpen(false);
     setSelectedOrder(null);
+    setSelectedUser(null);
+  };
+
+  const handleFirstPage = () => {
+    setPage(0);
+  };
+
+  const handleLastPage = () => {
+    setPage(Math.max(0, totalPages - 1));
+  };
+
+  const handlePrevPage = () => {
+    setPage((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setPage((prev) => Math.min(totalPages - 1, prev + 1));
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'delivered':
-        return 'success';
-      case 'shipped':
+      case 'PENDING':
+        return 'warning';
+      case 'CONFIRMED':
         return 'info';
-      case 'processing':
-        return 'warning';
-      case 'pending':
-        return 'default';
-      case 'cancelled':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case 'approved':
+      case 'DELIVERED':
         return 'success';
-      case 'pending':
-        return 'warning';
-      case 'rejected':
+      case 'CANCELLED':
         return 'error';
       default:
         return 'default';
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('es-AR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Pendiente';
+      case 'CONFIRMED':
+        return 'Confirmada';
+      case 'DELIVERED':
+        return 'Entregada';
+      case 'CANCELLED':
+        return 'Cancelada';
+      default:
+        return status;
+    }
   };
 
-  const getPaymentMethodLabel = (method) => {
-    const methods = {
-      credit_card: 'Tarjeta de Crédito',
-      debit_card: 'Tarjeta de Débito',
-      mercadopago: 'Mercado Pago',
-      cash: 'Efectivo'
-    };
-    return methods[method] || method;
-  };
+  if (loading && orderList.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5">Gestión de Órdenes</Typography>
         <Chip 
-          label={`${orderList.length} órdenes totales`}
+          label={`${totalElements} órdenes totales`}
           color="primary"
           variant="outlined"
         />
@@ -128,229 +203,192 @@ export default function OrderList() {
           <TableHead>
             <TableRow sx={{ bgcolor: 'primary.light' }}>
               <TableCell>ID</TableCell>
-              <TableCell>Cliente</TableCell>
               <TableCell>Fecha</TableCell>
               <TableCell>Total</TableCell>
               <TableCell>Estado</TableCell>
-              <TableCell>Pago</TableCell>
               <TableCell align="center">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {orderList
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((order) => (
-                <TableRow key={order.id} hover>
-                  <TableCell>#{order.id}</TableCell>
-                  <TableCell>{order.userName}</TableCell>
-                  <TableCell>{formatDate(order.orderDate)}</TableCell>
-                  <TableCell fontWeight={600}>
-                    ${order.total.toLocaleString('es-AR')}
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={order.status.toUpperCase()} 
-                      color={getStatusColor(order.status)}
+            {orderList.map((order) => (
+              <TableRow key={order.id} hover>
+                <TableCell>#{order.id}</TableCell>
+                <TableCell>
+                  {new Date(order.date).toLocaleString('es-AR')}
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  ${order.total?.toLocaleString('es-AR')}
+                </TableCell>
+                <TableCell>
+                  <Chip 
+                    label={getStatusLabel(order.status)} 
+                    color={getStatusColor(order.status)}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Tooltip title="Ver detalles">
+                    <IconButton 
+                      color="primary" 
                       size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={order.paymentStatus.toUpperCase()} 
-                      color={getPaymentStatusColor(order.paymentStatus)}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Ver detalles">
-                      <IconButton 
-                        color="primary" 
-                        onClick={() => handleViewDetails(order)}
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      onClick={() => handleViewDetails(order)}
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderTop: 1, borderColor: 'divider' }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+          <Box>
             <Tooltip title="Primera página">
               <span>
-                <IconButton 
-                  onClick={() => setPage(0)} 
-                  disabled={page === 0}
-                  size="small"
+                <IconButton
+                  onClick={handleFirstPage}
+                  disabled={page === 0 || loading}
+                  color="primary"
                 >
                   <FirstPageIcon />
                 </IconButton>
               </span>
             </Tooltip>
+            <Button
+              onClick={handlePrevPage}
+              disabled={page === 0 || loading}
+              sx={{ mx: 1 }}
+            >
+              Anterior
+            </Button>
+          </Box>
+          
+          <Chip 
+            label={`Página ${page + 1} de ${totalPages || 1}`}
+            color="primary"
+          />
+          
+          <Box>
+            <Button
+              onClick={handleNextPage}
+              disabled={page >= totalPages - 1 || loading}
+              sx={{ mx: 1 }}
+            >
+              Siguiente
+            </Button>
             <Tooltip title="Última página">
               <span>
-                <IconButton 
-                  onClick={() => setPage(Math.max(0, Math.ceil(orderList.length / rowsPerPage) - 1))} 
-                  disabled={page >= Math.ceil(orderList.length / rowsPerPage) - 1}
-                  size="small"
+                <IconButton
+                  onClick={handleLastPage}
+                  disabled={page >= totalPages - 1 || loading}
+                  color="primary"
                 >
                   <LastPageIcon />
                 </IconButton>
               </span>
             </Tooltip>
           </Box>
-          <TablePagination
-            component="div"
-            count={orderList.length}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por página:"
-            sx={{ border: 'none' }}
-          />
         </Box>
       </TableContainer>
 
       {/* Modal de detalles de la orden */}
-      <Dialog 
+      <Dialog
         open={detailModalOpen}
         onClose={handleCloseModal}
         fullWidth
         maxWidth="md"
       >
-        <DialogTitle sx={{ 
-          bgcolor: 'primary.main', 
+        <DialogTitle sx={{
+          bgcolor: 'primary.main',
           color: 'white',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
           Detalles de la Orden #{selectedOrder?.id}
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseModal}
-            sx={{ color: 'white' }}
-          >
+          <IconButton onClick={handleCloseModal} sx={{ color: 'white' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           {selectedOrder && (
-            <Box>
-              {/* Información del cliente */}
-              <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PersonIcon />
-                  Cliente
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Fecha
                 </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Nombre</Typography>
-                    <Typography variant="body1" fontWeight={600}>{selectedOrder.userName}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Email</Typography>
-                    <Typography variant="body1">{selectedOrder.userEmail}</Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
+                <Typography variant="body1">
+                  {new Date(selectedOrder.date).toLocaleString('es-AR')}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Estado
+                </Typography>
+                <Chip
+                  label={getStatusLabel(selectedOrder.status)}
+                  color={getStatusColor(selectedOrder.status)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Total
+                </Typography>
+                <Typography variant="h5" color="primary.main">
+                  ${selectedOrder.total?.toLocaleString('es-AR')}
+                </Typography>
+              </Grid>
 
-              {/* Información de la orden */}
-              <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ShoppingCartIcon />
-                  Productos
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <PersonIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Cliente
+                  </Typography>
+                </Box>
+                {loadingUser ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : selectedUser ? (
+                  <Box>
+                    <Typography variant="body1">
+                      {selectedUser.firstname} {selectedUser.lastname}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedUser.email}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Usuario ID: {selectedOrder.userId}
+                  </Typography>
+                )}
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <ShoppingCartIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Productos
+                  </Typography>
+                </Box>
                 <List>
-                  {selectedOrder.items.map((item, index) => (
-                    <ListItem 
-                      key={index}
-                      sx={{ 
-                        border: '1px solid', 
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        mb: 1
-                      }}
-                    >
+                  {selectedOrder.items?.map((item, index) => (
+                    <ListItem key={index}>
                       <ListItemText
-                        primary={item.productName}
-                        secondary={`Cantidad: ${item.quantity}`}
+                        primary={item.productName || `Producto ID: ${item.productId}`}
+                        secondary={`Cantidad: ${item.quantity} - Precio: $${item.price?.toLocaleString('es-AR')}`}
                       />
-                      <Typography variant="body1" fontWeight={600}>
-                        ${(item.price * item.quantity).toLocaleString('es-AR')}
-                      </Typography>
                     </ListItem>
                   ))}
                 </List>
-                <Box sx={{ mt: 2, pt: 2, borderTop: '2px solid', borderColor: 'divider' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="h6">Total</Typography>
-                    <Typography variant="h6" color="primary">
-                      ${selectedOrder.total.toLocaleString('es-AR')}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Paper>
-
-              {/* Información de envío */}
-              <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <LocationOnIcon />
-                  Dirección de Envío
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="body1">
-                  {selectedOrder.shippingAddress.address}
-                </Typography>
-                <Typography variant="body1">
-                  {selectedOrder.shippingAddress.city}, CP: {selectedOrder.shippingAddress.zipCode}
-                </Typography>
-              </Paper>
-
-              {/* Información de pago */}
-              <Paper elevation={2} sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PaymentIcon />
-                  Información de Pago
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Método de Pago</Typography>
-                    <Typography variant="body1" fontWeight={600}>
-                      {getPaymentMethodLabel(selectedOrder.paymentMethod)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Estado del Pago</Typography>
-                    <Chip 
-                      label={selectedOrder.paymentStatus.toUpperCase()} 
-                      color={getPaymentStatusColor(selectedOrder.paymentStatus)}
-                      size="small"
-                      sx={{ mt: 0.5 }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Estado de la Orden</Typography>
-                    <Chip 
-                      label={selectedOrder.status.toUpperCase()} 
-                      color={getStatusColor(selectedOrder.status)}
-                      size="small"
-                      sx={{ mt: 0.5 }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" color="text.secondary">Fecha de Orden</Typography>
-                    <Typography variant="body1">{formatDate(selectedOrder.orderDate)}</Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Box>
+              </Grid>
+            </Grid>
           )}
         </DialogContent>
       </Dialog>
