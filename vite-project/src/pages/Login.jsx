@@ -55,13 +55,28 @@ export default function Login() {
         console.log("Login exitoso:", data);
 
         // Guardar el token en localStorage
-        localStorage.setItem("access_token", data.access_token);
+        const token = data.access_token || data.accessToken;
+        if (token) localStorage.setItem("access_token", token);
 
-        // Guardar información del usuario (añadir role si viene del backend)
+        // Extraer id del response o del token y guardar como const
+        let id = null;
+        try {
+          id = data?.id ?? data?.userId ?? data?.user?.id ?? null;
+          if (id != null) {
+            const n = Number(id);
+            if (!Number.isNaN(n) && Number.isFinite(n)) id = n; else id = null;
+          }
+        } catch (err) {
+          id = null;
+        }
+
+        // Guardar información del usuario (email, role y id numérico si lo tenemos)
         const userInfo = {
           email: form.email,
           role: data.role,
         };
+        const userId = id;
+        if (userId != null) userInfo.id = userId;
         localStorage.setItem("userInfo", JSON.stringify(userInfo));
 
         // Redirigir al home (ajusta la ruta según tu app)
