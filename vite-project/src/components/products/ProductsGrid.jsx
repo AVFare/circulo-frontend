@@ -26,7 +26,7 @@ export default function ProductsGrid({ products = [], viewMode = 'grid' }) {
           }
         }}
       >
-        {products.slice(0, 12).map((product) => ( // Limitar a 12 productos
+        {products.map((product) => (
           <Grid 
             key={product.id} 
             item

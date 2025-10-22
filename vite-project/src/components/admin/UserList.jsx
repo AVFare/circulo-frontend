@@ -27,6 +27,8 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LoginIcon from '@mui/icons-material/Login';
+import FirstPageIcon from '@mui/icons-material/FirstPage';
+import LastPageIcon from '@mui/icons-material/LastPage';
 import { users } from '../../mock/users';
 import { orders } from '../../mock/orders';
 
@@ -141,15 +143,42 @@ export default function UserList() {
               ))}
           </TableBody>
         </Table>
-        <TablePagination
-          component="div"
-          count={userList.length}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Filas por página:"
-        />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="Primera página">
+              <span>
+                <IconButton 
+                  onClick={() => setPage(0)} 
+                  disabled={page === 0}
+                  size="small"
+                >
+                  <FirstPageIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Última página">
+              <span>
+                <IconButton 
+                  onClick={() => setPage(Math.max(0, Math.ceil(userList.length / rowsPerPage) - 1))} 
+                  disabled={page >= Math.ceil(userList.length / rowsPerPage) - 1}
+                  size="small"
+                >
+                  <LastPageIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+          <TablePagination
+            component="div"
+            count={userList.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Filas por página:"
+            sx={{ border: 'none' }}
+          />
+        </Box>
       </TableContainer>
 
       {/* Modal de detalles del usuario */}

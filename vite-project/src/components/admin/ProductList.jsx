@@ -27,6 +27,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import FirstPageIcon from '@mui/icons-material/FirstPage';
+import LastPageIcon from '@mui/icons-material/LastPage';
 import ProductForm from './ProductForm';
 
 export default function ProductList({ onCloseDrawer }) {
@@ -220,15 +222,42 @@ export default function ProductList({ onCloseDrawer }) {
               ))}
           </TableBody>
         </Table>
-        <TablePagination
-          component="div"
-          count={totalElements}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Filas por página:"
-        />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="Primera página">
+              <span>
+                <IconButton 
+                  onClick={() => setPage(0)} 
+                  disabled={page === 0}
+                  size="small"
+                >
+                  <FirstPageIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Última página">
+              <span>
+                <IconButton 
+                  onClick={() => setPage(Math.max(0, Math.ceil(totalElements / rowsPerPage) - 1))} 
+                  disabled={page >= Math.ceil(totalElements / rowsPerPage) - 1}
+                  size="small"
+                >
+                  <LastPageIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+          <TablePagination
+            component="div"
+            count={totalElements}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Filas por página:"
+            sx={{ border: 'none' }}
+          />
+        </Box>
       </TableContainer>
 
       {/* Modal para editar producto */}
