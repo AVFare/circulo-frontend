@@ -106,7 +106,7 @@ export default function UserList() {
         setDetailModalOpen(true);
         
         setLoadingOrders(true);
-        fetch(`http://localhost:4002/api/action/orders?page=0&size=100&sortBy=id&sortDirection=desc`, options)
+        fetch(`http://localhost:4002/api/action/orders?page=0&size=100`, options)
           .then((response) => response.json())
           .then((data) => {
             const filteredOrders = (data.content || []).filter(order => order.userId === userId);
@@ -132,36 +132,6 @@ export default function UserList() {
     setDetailModalOpen(false);
     setSelectedUser(null);
     setUserOrders([]);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return 'warning';
-      case 'CONFIRMED':
-        return 'info';
-      case 'DELIVERED':
-        return 'success';
-      case 'CANCELLED':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return 'Pendiente';
-      case 'CONFIRMED':
-        return 'Confirmada';
-      case 'DELIVERED':
-        return 'Entregada';
-      case 'CANCELLED':
-        return 'Cancelada';
-      default:
-        return status;
-    }
   };
 
   if (loading && userList.length === 0) {
@@ -394,18 +364,7 @@ export default function UserList() {
                       <ListItem key={order.id}>
                         <ListItemText
                           primary={`Orden #${order.id}`}
-                          secondary={
-                            <>
-                              Fecha: {new Date(order.date).toLocaleDateString('es-AR')} - 
-                              Total: ${order.total?.toLocaleString('es-AR')} - 
-                              <Chip
-                                label={getStatusLabel(order.status)}
-                                color={getStatusColor(order.status)}
-                                size="small"
-                                sx={{ ml: 1 }}
-                              />
-                            </>
-                          }
+                          secondary={`Fecha: ${order.orderDate ? new Date(order.orderDate).toLocaleDateString('es-AR') : 'N/A'} - Total: $${order.importeTotal?.toLocaleString('es-AR') || '0'} - ${order.paymentMethod || 'N/A'}`}
                         />
                       </ListItem>
                     ))}

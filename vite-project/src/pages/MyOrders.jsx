@@ -54,6 +54,7 @@ export default function MyOrders() {
     }
 
     setLoading(true);
+    setError(''); // Limpiar errores previos
     const options = {
       method: 'GET',
       headers: {
@@ -62,12 +63,15 @@ export default function MyOrders() {
       },
     };
 
-    const url = `http://localhost:4002/api/action/orders?page=${page}&size=${rowsPerPage}&sortBy=id&sortDirection=desc`;
+    const url = `http://localhost:4002/api/action/orders?page=${page}&size=${rowsPerPage}`;
 
     fetch(url, options)
       .then((response) => {
         if (!response.ok) {
-          throw new Error('Error al cargar las órdenes');
+          return response.text().then(text => {
+            console.error('Error response:', text);
+            throw new Error(`Error ${response.status}: ${text}`);
+          });
         }
         return response.json();
       })
@@ -154,7 +158,7 @@ export default function MyOrders() {
               <TableCell>ID</TableCell>
               <TableCell>Fecha</TableCell>
               <TableCell>Total</TableCell>
-              <TableCell>Estado</TableCell>
+              <TableCell>Método de Pago</TableCell>
               <TableCell align="center">Acciones</TableCell>
             </TableRow>
           </TableHead>
@@ -172,13 +176,13 @@ export default function MyOrders() {
                 <TableRow key={order.id}>
                   <TableCell>{order.id}</TableCell>
                   <TableCell>
-                    {new Date(order.date).toLocaleDateString('es-AR')}
+                    {order.orderDate ? new Date(order.orderDate).toLocaleDateString('es-AR') : 'N/A'}
                   </TableCell>
-                  <TableCell>${order.total?.toLocaleString('es-AR')}</TableCell>
+                  <TableCell>${order.importeTotal?.toLocaleString('es-AR') || '0'}</TableCell>
                   <TableCell>
                     <Chip
-                      label={getStatusLabel(order.status)}
-                      color={getStatusColor(order.status)}
+                      label={order.paymentMethod || 'N/A'}
+                      color="primary"
                       size="small"
                     />
                   </TableCell>
@@ -259,16 +263,16 @@ export default function MyOrders() {
                   Fecha
                 </Typography>
                 <Typography variant="body1">
-                  {new Date(selectedOrder.date).toLocaleString('es-AR')}
+                  {selectedOrder.orderDate ? new Date(selectedOrder.orderDate).toLocaleString('es-AR') : 'N/A'}
                 </Typography>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Estado
+                  Método de Pago
                 </Typography>
                 <Chip
-                  label={getStatusLabel(selectedOrder.status)}
-                  color={getStatusColor(selectedOrder.status)}
+                  label={selectedOrder.paymentMethod || 'N/A'}
+                  color="primary"
                   size="small"
                 />
               </Grid>
@@ -277,8 +281,55 @@ export default function MyOrders() {
                   Total
                 </Typography>
                 <Typography variant="h5" color="primary.main">
-                  ${selectedOrder.total?.toLocaleString('es-AR')}
+                  ${selectedOrder.importeTotal?.toLocaleString('es-AR') || '0'}
                 </Typography>
+              </Grid>
+
+              {/* Información de envío */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" gutterBottom>
+                  Información de Envío
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Dirección
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.address || 'N/A'}
+                    </Typography>
+                    {selectedOrder.addressLine2 && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedOrder.addressLine2}
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Ciudad
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.city || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Código Postal
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.postalCode || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Teléfono
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.phone || 'N/A'}
+                    </Typography>
+                  </Grid>
+                </Grid>
               </Grid>
               
               <Grid item xs={12}>
@@ -290,8 +341,8 @@ export default function MyOrders() {
                   {selectedOrder.items?.map((item, index) => (
                     <ListItem key={index}>
                       <ListItemText
-                        primary={item.productName || `Producto ID: ${item.productId}`}
-                        secondary={`Cantidad: ${item.quantity} - Precio: $${item.price?.toLocaleString('es-AR')}`}
+                        primary={item.item?.name || `Producto ID: ${item.item?.id}`}
+                        secondary={`Cantidad: ${item.cantidad || 1}`}
                       />
                     </ListItem>
                   ))}

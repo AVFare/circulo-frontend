@@ -52,12 +52,70 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
   };
 
   const handleComplete = () => {
-    onOrderComplete({
-      customer: customerData,
-      payment: paymentData,
-      cart
-    });
-    onClose();
+    // Obtener token y usuario del localStorage
+    const token = localStorage.getItem('access_token');
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    
+    if (!token || !userInfo.id) {
+      console.error('No se encontró token o ID de usuario');
+      alert('Error: No hay sesión activa. Por favor inicia sesión.');
+      return;
+    }
+
+    // Mapear el método de pago al formato del backend
+    const paymentMethodMap = {
+      'card': 'CARD',
+      'mercadopago': 'MERCADOPAGO'
+    };
+
+    // Construir el objeto de orden según la documentación del backend
+    const datosAEnviar = {
+      user: { id: userInfo.id },
+      items: cart.map(item => ({
+        item: { id: item.id },
+        cantidad: item.qty || 1
+      })),
+      phone: customerData.phone,
+      address: customerData.address,
+      addressLine2: customerData.address2 && customerData.address2.trim() !== '' ? customerData.address2 : null,
+      city: customerData.city,
+      postalCode: customerData.zipCode,
+      paymentMethod: paymentMethodMap[paymentData.method] || 'MERCADOPAGO'
+    };
+
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(datosAEnviar),
+    };
+
+    const URL = "http://localhost:4002/api/action/orders";
+
+    fetch(URL, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Error al crear la orden');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Orden creada exitosamente:', data);
+        // Llamar al callback con los datos completos
+        onOrderComplete({
+          customer: customerData,
+          payment: paymentData,
+          cart,
+          orderData: data
+        });
+        onClose();
+      })
+      .catch((error) => {
+        console.error("Error al crear la orden: ", error);
+        alert('Error al procesar la orden. Por favor intenta nuevamente.');
+      });
   };
 
   return (

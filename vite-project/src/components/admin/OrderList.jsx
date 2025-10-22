@@ -23,6 +23,8 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
@@ -57,6 +59,7 @@ export default function OrderList() {
     }
 
     setLoading(true);
+    setError(''); // Limpiar errores previos
     const options = {
       method: 'GET',
       headers: {
@@ -65,12 +68,15 @@ export default function OrderList() {
       },
     };
 
-    const url = `http://localhost:4002/api/action/orders?page=${page}&size=${rowsPerPage}&sortBy=id&sortDirection=desc`;
+    const url = `http://localhost:4002/api/action/orders?page=${page}&size=${rowsPerPage}`;
 
     fetch(url, options)
       .then((response) => {
         if (!response.ok) {
-          throw new Error('Error al cargar órdenes');
+          return response.text().then(text => {
+            console.error('Admin error response:', text);
+            throw new Error(`Error ${response.status}: ${text}`);
+          });
         }
         return response.json();
       })
@@ -114,8 +120,10 @@ export default function OrderList() {
   const handleViewDetails = (order) => {
     setSelectedOrder(order);
     setDetailModalOpen(true);
-    if (order.userId) {
-      fetchUserDetails(order.userId);
+    // Intentar obtener el userId de diferentes formas
+    const userId = order.user?.id || order.userId;
+    if (userId) {
+      fetchUserDetails(userId);
     }
   };
 
@@ -123,6 +131,79 @@ export default function OrderList() {
     setDetailModalOpen(false);
     setSelectedOrder(null);
     setSelectedUser(null);
+  };
+
+  const handleStatusChange = (orderId, newStatus) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert('No se encontró token de autenticación');
+      return;
+    }
+
+    const datosAEnviar = {
+      orderStatus: newStatus
+    };
+
+    const options = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(datosAEnviar),
+    };
+
+    const URL = `http://localhost:4002/api/action/orders/${orderId}/status`;
+
+    fetch(URL, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Error al actualizar el estado');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Actualizar la orden en la lista local
+        setOrderList(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderId ? { ...order, orderStatus: data.orderStatus } : order
+          )
+        );
+      })
+      .catch((error) => {
+        console.error('Error al actualizar estado:', error);
+        alert('Error al actualizar el estado de la orden');
+      });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'PENDIENTE':
+        return 'warning';
+      case 'EN_PREPARACION':
+        return 'info';
+      case 'ENVIADO':
+        return 'secondary';
+      case 'ENTREGADO':
+        return 'success';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'PENDIENTE':
+        return 'Pendiente';
+      case 'EN_PREPARACION':
+        return 'En Preparación';
+      case 'ENVIADO':
+        return 'Enviado';
+      case 'ENTREGADO':
+        return 'Entregado';
+      default:
+        return status;
+    }
   };
 
   const handleFirstPage = () => {
@@ -139,36 +220,6 @@ export default function OrderList() {
 
   const handleNextPage = () => {
     setPage((prev) => Math.min(totalPages - 1, prev + 1));
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return 'warning';
-      case 'CONFIRMED':
-        return 'info';
-      case 'DELIVERED':
-        return 'success';
-      case 'CANCELLED':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return 'Pendiente';
-      case 'CONFIRMED':
-        return 'Confirmada';
-      case 'DELIVERED':
-        return 'Entregada';
-      case 'CANCELLED':
-        return 'Cancelada';
-      default:
-        return status;
-    }
   };
 
   if (loading && orderList.length === 0) {
@@ -203,8 +254,10 @@ export default function OrderList() {
           <TableHead>
             <TableRow sx={{ bgcolor: 'primary.light' }}>
               <TableCell>ID</TableCell>
+              <TableCell>Usuario</TableCell>
               <TableCell>Fecha</TableCell>
               <TableCell>Total</TableCell>
+              <TableCell>Método de Pago</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell align="center">Acciones</TableCell>
             </TableRow>
@@ -214,17 +267,49 @@ export default function OrderList() {
               <TableRow key={order.id} hover>
                 <TableCell>#{order.id}</TableCell>
                 <TableCell>
-                  {new Date(order.date).toLocaleString('es-AR')}
+                  {order.user?.email || 
+                   order.user?.username || 
+                   order.userEmail ||
+                   (order.userId ? `Usuario ID: ${order.userId}` : 'Usuario no disponible')}
+                </TableCell>
+                <TableCell>
+                  {order.orderDate ? new Date(order.orderDate).toLocaleString('es-AR') : 'N/A'}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
-                  ${order.total?.toLocaleString('es-AR')}
+                  ${order.importeTotal?.toLocaleString('es-AR') || '0'}
                 </TableCell>
                 <TableCell>
                   <Chip 
-                    label={getStatusLabel(order.status)} 
-                    color={getStatusColor(order.status)}
+                    label={order.paymentMethod || 'N/A'} 
+                    color="primary"
                     size="small"
                   />
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={order.orderStatus || 'PENDIENTE'}
+                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                    size="small"
+                    sx={{
+                      minWidth: 150,
+                      '& .MuiSelect-select': {
+                        py: 0.5,
+                      }
+                    }}
+                  >
+                    <MenuItem value="PENDIENTE">
+                      <Chip label="Pendiente" color="warning" size="small" />
+                    </MenuItem>
+                    <MenuItem value="EN_PREPARACION">
+                      <Chip label="En Preparación" color="info" size="small" />
+                    </MenuItem>
+                    <MenuItem value="ENVIADO">
+                      <Chip label="Enviado" color="secondary" size="small" />
+                    </MenuItem>
+                    <MenuItem value="ENTREGADO">
+                      <Chip label="Entregado" color="success" size="small" />
+                    </MenuItem>
+                  </Select>
                 </TableCell>
                 <TableCell align="center">
                   <Tooltip title="Ver detalles">
@@ -319,16 +404,26 @@ export default function OrderList() {
                   Fecha
                 </Typography>
                 <Typography variant="body1">
-                  {new Date(selectedOrder.date).toLocaleString('es-AR')}
+                  {selectedOrder.orderDate ? new Date(selectedOrder.orderDate).toLocaleString('es-AR') : 'N/A'}
                 </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Método de Pago
+                </Typography>
+                <Chip
+                  label={selectedOrder.paymentMethod || 'N/A'}
+                  color="primary"
+                  size="small"
+                />
               </Grid>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Estado
                 </Typography>
                 <Chip
-                  label={getStatusLabel(selectedOrder.status)}
-                  color={getStatusColor(selectedOrder.status)}
+                  label={getStatusLabel(selectedOrder.orderStatus)}
+                  color={getStatusColor(selectedOrder.orderStatus)}
                   size="small"
                 />
               </Grid>
@@ -337,7 +432,7 @@ export default function OrderList() {
                   Total
                 </Typography>
                 <Typography variant="h5" color="primary.main">
-                  ${selectedOrder.total?.toLocaleString('es-AR')}
+                  ${selectedOrder.importeTotal?.toLocaleString('es-AR') || '0'}
                 </Typography>
               </Grid>
 
@@ -362,11 +457,71 @@ export default function OrderList() {
                       {selectedUser.email}
                     </Typography>
                   </Box>
-                ) : (
+                ) : selectedOrder.user ? (
+                  <Box>
+                    <Typography variant="body1">
+                      {selectedOrder.user.firstName} {selectedOrder.user.lastName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedOrder.user.email}
+                    </Typography>
+                  </Box>
+                ) : selectedOrder.userId ? (
                   <Typography variant="body2" color="text.secondary">
                     Usuario ID: {selectedOrder.userId}
                   </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Usuario no disponible
+                  </Typography>
                 )}
+              </Grid>
+
+              {/* Información de envío */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" gutterBottom>
+                  Información de Envío
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Dirección
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.address || 'N/A'}
+                    </Typography>
+                    {selectedOrder.addressLine2 && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedOrder.addressLine2}
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Ciudad
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.city || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Código Postal
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.postalCode || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Teléfono
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedOrder.phone || 'N/A'}
+                    </Typography>
+                  </Grid>
+                </Grid>
               </Grid>
               
               <Grid item xs={12}>
@@ -381,8 +536,8 @@ export default function OrderList() {
                   {selectedOrder.items?.map((item, index) => (
                     <ListItem key={index}>
                       <ListItemText
-                        primary={item.productName || `Producto ID: ${item.productId}`}
-                        secondary={`Cantidad: ${item.quantity} - Precio: $${item.price?.toLocaleString('es-AR')}`}
+                        primary={item.item?.name || `Producto ID: ${item.item?.id}`}
+                        secondary={`Cantidad: ${item.cantidad || 1}`}
                       />
                     </ListItem>
                   ))}
