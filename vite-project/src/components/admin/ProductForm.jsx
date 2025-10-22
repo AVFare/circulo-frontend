@@ -41,6 +41,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       discount: 0,
       stock: '',
       category: 0,
+      status: 0,
       imageName: '',
       imageData: '',
     }
@@ -141,29 +142,31 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         return;
       }
 
+      const isEditMode = !!product;
+      
       const itemDto = {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
-        status: 0, // Siempre PUBLISHED al crear
+        status: isEditMode ? formData.status : 0,
         stock: parseInt(formData.stock),
         discount: parseInt(formData.discount) || 0,
         category: parseInt(formData.category),
         imageName: formData.imageName,
-        imageData: formData.imageData ? formData.imageData.split(',')[1] : '', // Enviar solo la parte Base64, sin el prefijo
+        imageData: formData.imageData ? formData.imageData.split(',')[1] : '',
       };
 
       // Debug temporal
+      console.log('Modo:', isEditMode ? 'EDITAR' : 'CREAR');
       console.log('ImageName:', itemDto.imageName);
       console.log('ImageData length:', itemDto.imageData?.length || 0);
-      console.log('ImageData preview:', itemDto.imageData ? itemDto.imageData.substring(0, 50) : 'EMPTY');
-      console.log('ItemDto completo (sin imageData):', {
-        ...itemDto,
-        imageData: itemDto.imageData ? `[${itemDto.imageData.length} chars]` : 'null'
-      });
 
-      const response = await fetch('http://localhost:4002/api/item/products', {
-        method: 'POST',
+      const url = isEditMode 
+        ? `http://localhost:4002/api/item/products/${product.id}`
+        : 'http://localhost:4002/api/item/products';
+
+      const response = await fetch(url, {
+        method: isEditMode ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -174,7 +177,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       if (!response.ok) {
         const errorText = await response.text();
         
-        let errorMessage = 'Error al crear producto';
+        let errorMessage = isEditMode ? 'Error al actualizar producto' : 'Error al crear producto';
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData?.message || errorData?.error || errorMessage;
@@ -185,32 +188,34 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         throw new Error(`${errorMessage} (Status: ${response.status})`);
       }
 
-      const createdProduct = await response.json();
-      setSuccessMessage('¡Producto creado exitosamente!');
+      const savedProduct = await response.json();
+      setSuccessMessage(isEditMode ? '¡Producto actualizado exitosamente!' : '¡Producto creado exitosamente!');
       
       // Llamar al callback onSubmit si existe
       if (onSubmit) {
-        onSubmit(createdProduct);
+        onSubmit(savedProduct);
       }
 
       // Limpiar formulario después de 2 segundos
       setTimeout(() => {
-        setFormData({
-          name: '',
-          description: '',
-          price: '',
-          discount: 0,
-          stock: '',
-          category: 0,
-          imageName: '',
-          imageData: '',
-        });
+        if (!isEditMode) {
+          setFormData({
+            name: '',
+            description: '',
+            price: '',
+            discount: 0,
+            stock: '',
+            category: 0,
+            imageName: '',
+            imageData: '',
+          });
+        }
         setSuccessMessage('');
         if (onClose) onClose();
       }, 2000);
 
     } catch (error) {
-      console.error('Error al crear producto:', error);
+      console.error('Error al guardar producto:', error);
       setErrors({ submit: error.message });
     } finally {
       setLoading(false);

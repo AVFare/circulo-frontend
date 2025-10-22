@@ -13,7 +13,7 @@ export default function MainLayout() {
 
   useEffect(() => {
     // Recuperar datos de usuario del localStorage
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem('userInfo');
     if (userData) {
       setUser(JSON.parse(userData));
     }
@@ -59,21 +59,24 @@ export default function MainLayout() {
         <Outlet context={{ addToCart }} />
       </Box>
 
-      <Fab
-        color="primary"
-        onClick={() => setDrawerOpen(true)}
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          boxShadow: '0 4px 20px rgba(45, 80, 22, 0.3)',
-        }}
-        aria-label="carrito de compras"
-      >
-        <Badge badgeContent={cartCount} color="error">
-          <ShoppingCartIcon />
-        </Badge>
-      </Fab>
+      {/* Mostrar botón del carrito solo si NO es admin */}
+      {(!user || user.role !== 'ADMIN') && (
+        <Fab
+          color="primary"
+          onClick={() => setDrawerOpen(true)}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            boxShadow: '0 4px 20px rgba(45, 80, 22, 0.3)',
+          }}
+          aria-label="carrito de compras"
+        >
+          <Badge badgeContent={cartCount} color="error">
+            <ShoppingCartIcon />
+          </Badge>
+        </Fab>
+      )}
 
       <CartDrawer
         open={drawerOpen}
