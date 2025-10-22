@@ -28,6 +28,8 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PersonIcon from '@mui/icons-material/Person';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PaymentIcon from '@mui/icons-material/Payment';
+import FirstPageIcon from '@mui/icons-material/FirstPage';
+import LastPageIcon from '@mui/icons-material/LastPage';
 import { orders } from '../../mock/orders';
 
 export default function OrderList() {
@@ -174,15 +176,42 @@ export default function OrderList() {
               ))}
           </TableBody>
         </Table>
-        <TablePagination
-          component="div"
-          count={orderList.length}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Filas por página:"
-        />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="Primera página">
+              <span>
+                <IconButton 
+                  onClick={() => setPage(0)} 
+                  disabled={page === 0}
+                  size="small"
+                >
+                  <FirstPageIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Última página">
+              <span>
+                <IconButton 
+                  onClick={() => setPage(Math.max(0, Math.ceil(orderList.length / rowsPerPage) - 1))} 
+                  disabled={page >= Math.ceil(orderList.length / rowsPerPage) - 1}
+                  size="small"
+                >
+                  <LastPageIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+          <TablePagination
+            component="div"
+            count={orderList.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Filas por página:"
+            sx={{ border: 'none' }}
+          />
+        </Box>
       </TableContainer>
 
       {/* Modal de detalles de la orden */}
