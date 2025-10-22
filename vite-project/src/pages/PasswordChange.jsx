@@ -8,22 +8,119 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Alert,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
+// ...existing code...
+
 export default function PasswordChange() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const getUserId = () => {
+    // intentar obtener id desde userInfo en localStorage y devolver Number (long)
+    try {
+      const raw = localStorage.getItem("userInfo");
+      if (raw) {
+        const user = JSON.parse(raw);
+        const candidate = user?.id ?? user?.userId ?? null;
+        if (candidate != null) {
+          const n = Number(candidate);
+          if (!Number.isNaN(n) && Number.isFinite(n)) return n;
+        }
+      }
+    } catch (err) {
+      /* ignore */
+    }
+
+    // fallback: intentar decodificar el payload del JWT (access_token) y extraer id numérico
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return null;
+      const parts = token.split(".");
+      if (parts.length < 2) return null;
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      const candidate = payload?.id ?? payload?.sub ?? payload?.userId ?? null;
+      if (candidate != null) {
+        const n = Number(candidate);
+        if (!Number.isNaN(n) && Number.isFinite(n)) return n;
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Login:", form);
-    navigate("/inicio");
+    setError("");
+    setSuccess(false);
+
+    if (form.password !== form.confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    const id = getUserId();
+    // aceptar 0 como id válido, pero rechazar null/undefined o no-numéricos
+    if (id === null || id === undefined || Number.isNaN(Number(id))) {
+      setError("No se pudo determinar un id numérico del usuario. Iniciá sesión nuevamente.");
+      return;
+    }
+
+    setLoading(true);
+
+    const datosAEnviar = {
+      password: form.password,
+    };
+
+    const token = localStorage.getItem("access_token");
+
+    const options = {
+      method: "PUT", // ajustar a PATCH si el backend espera PATCH
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(datosAEnviar),
+    };
+
+    const URL = `http://localhost:4002/api/user/users/update/${id}`;
+
+    fetch(URL, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error al cambiar la contraseña");
+        }
+        return response.text(); // el backend responde 200 sin cuerpo; leer texto para no fallar
+      })
+      .then(() => {
+        setSuccess(true);
+        // redirigir o notificar; por ahora redirijo al inicio después de un breve delay
+        setTimeout(() => {
+          navigate("/inicio");
+        }, 900);
+      })
+      .catch((error) => {
+        console.error("Error al cambiar contraseña: ", error);
+        setError("Error al cambiar la contraseña. Intenta nuevamente.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
@@ -78,6 +175,18 @@ export default function PasswordChange() {
             Cambio de contraseña
           </Typography>
 
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Contraseña cambiada correctamente. Redirigiendo...
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
               <TextField
@@ -89,6 +198,7 @@ export default function PasswordChange() {
                 onChange={handleChange}
                 required
                 variant="outlined"
+                disabled={loading}
               />
               <TextField
                 fullWidth
@@ -99,29 +209,19 @@ export default function PasswordChange() {
                 onChange={handleChange}
                 required
                 variant="outlined"
+                disabled={loading}
               />
               <TextField
                 fullWidth
                 label="Repita la nueva contraseña"
                 type="password"
-                name="password"
-                value={form.password}
+                name="confirmPassword"
+                value={form.confirmPassword}
                 onChange={handleChange}
                 required
                 variant="outlined"
-              />{" "}
-              {/* <TextField
-                select
-                fullWidth
-                label="Rol"
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-                required
-              >
-                <MenuItem value="USER">Usuario</MenuItem>
-                <MenuItem value="ADMIN">Administrador</MenuItem>
-              </TextField> */}
+                disabled={loading}
+              />
               <Button
                 type="submit"
                 fullWidth
@@ -129,21 +229,22 @@ export default function PasswordChange() {
                 color="primary"
                 size="large"
                 sx={{ mt: 2 }}
+                disabled={loading}
               >
-                Iniciar sesión
+                {loading ? "Cambiando..." : "Cambiar contraseña"}
               </Button>
             </Stack>
           </form>
           <Typography variant="body2" sx={{ mt: 3 }}>
             <Link
-              to="/cambiar-contraseña"
+              to="/"
               style={{
                 textDecoration: "none",
                 fontWeight: 700,
                 color: "#2D5016",
               }}
             >
-              Olvidé mi contraseña
+              Volver
             </Link>
           </Typography>
         </Paper>
