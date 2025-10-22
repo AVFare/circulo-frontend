@@ -10,6 +10,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -28,6 +30,7 @@ export default function AdminDrawer({ onNavigate }) {
   const [productListModalOpen, setProductListModalOpen] = useState(false);
   const [userListModalOpen, setUserListModalOpen] = useState(false);
   const [orderListModalOpen, setOrderListModalOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const toggleDrawer = () => {
     setOpen(!open);
@@ -67,7 +70,11 @@ export default function AdminDrawer({ onNavigate }) {
   const handleProductSubmit = (productData) => {
     console.log('Producto guardado:', productData);
     handleCloseProductModal();
-    alert('Producto creado con éxito');
+    setSnackbar({ open: true, message: 'Producto creado con éxito', severity: 'success' });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -224,6 +231,22 @@ export default function AdminDrawer({ onNavigate }) {
           <OrderList />
         </DialogContent>
       </Dialog>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }
