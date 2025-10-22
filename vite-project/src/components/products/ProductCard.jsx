@@ -92,9 +92,40 @@ export default function ProductCard({ product, viewMode = 'grid' }) {
 
         <CardContent sx={{ p: 2, height: 140, overflow: 'hidden' }}>
           <Stack spacing={1}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-              ${product.price.toLocaleString('es-AR')}
-            </Typography>
+            {/* Precio con descuento */}
+            {product.discount > 0 ? (
+              <Box>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.disabled',
+                      textDecoration: 'line-through',
+                    }}
+                  >
+                    ${product.price.toLocaleString('es-AR')}
+                  </Typography>
+                  <Chip
+                    label={`${product.discount}% OFF`}
+                    size="small"
+                    sx={{
+                      bgcolor: 'success.main',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      height: 20,
+                      fontSize: '0.7rem',
+                    }}
+                  />
+                </Stack>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mt: 0.5 }}>
+                  ${(product.price * (1 - product.discount / 100)).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                ${product.price.toLocaleString('es-AR')}
+              </Typography>
+            )}
 
             <Typography
               variant="body2"
