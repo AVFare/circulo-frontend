@@ -223,7 +223,7 @@ export default function Login() {
           </Typography>
           <Typography variant="body2" sx={{ mt: 3 }}>
             <Link
-              to="/cambiar-contraseña"
+              to="/cambiar-contrasena"
               style={{
                 textDecoration: "none",
                 fontWeight: 700,
