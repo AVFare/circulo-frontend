@@ -37,29 +37,37 @@ export default function CheckoutCustomerForm({ initialData, onSubmit }) {
 
   const validateForm = () => {
     const newErrors = {};
-    
     // Validate required fields
     ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'zipCode'].forEach(field => {
       if (!formData[field]?.trim()) {
         newErrors[field] = 'Campo obligatorio';
       }
     });
-    
+
+    // Validate firstName and lastName (only letters, accents, spaces)
+    const nameRegex = /^[\p{L} ]+$/u;
+    if (formData.firstName && !nameRegex.test(formData.firstName)) {
+      newErrors.firstName = 'Solo letras y espacios';
+    }
+    if (formData.lastName && !nameRegex.test(formData.lastName)) {
+      newErrors.lastName = 'Solo letras y espacios';
+    }
+
     // Validate email format
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email inválido';
     }
-    
+
     // Validate phone (only numbers)
     if (formData.phone && !/^\d+$/.test(formData.phone)) {
       newErrors.phone = 'Solo números';
     }
-    
+
     // Validate zip code (only numbers)
     if (formData.zipCode && !/^\d+$/.test(formData.zipCode)) {
       newErrors.zipCode = 'Solo números';
     }
-    
+
     setErrors(newErrors);
     setIsFormValid(Object.keys(newErrors).length === 0);
   };
