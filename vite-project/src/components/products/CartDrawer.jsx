@@ -19,6 +19,7 @@ import CheckoutFlow from '../payments/CheckoutFlow';
 
 export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty, clearCart }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [stockError, setStockError] = useState(null);
   
   // Función para calcular el precio final con descuento
   const getFinalPrice = (item) => {
@@ -52,7 +53,40 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
     }
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    setStockError(null);
+    const token = localStorage.getItem('access_token');
+    let errorItems = [];
+    for (const item of items) {
+      try {
+        const res = await fetch(`http://localhost:4002/api/item/catalog/products/${item.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error('No se pudo obtener el producto');
+        const prod = await res.json();
+        if (item.qty > prod.stock) {
+          errorItems.push({
+            name: item.name,
+            requested: item.qty,
+            available: prod.stock
+          });
+        }
+      } catch (err) {
+        errorItems.push({
+          name: item.name,
+          requested: item.qty,
+          available: 'error'
+        });
+      }
+    }
+    if (errorItems.length > 0) {
+      setStockError(errorItems);
+      return;
+    }
     setCheckoutOpen(true);
   };
 
@@ -213,6 +247,20 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                 >
                   Pagar ahora
                 </Button>
+                {stockError && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography color="error" variant="body1">
+                      No hay suficiente stock para los siguientes productos:
+                    </Typography>
+                    <ul style={{ color: 'red', marginLeft: 16 }}>
+                      {stockError.map((err, idx) => (
+                        <li key={idx}>
+                          {err.name}: Pediste {err.requested}, disponible {err.available}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
               </Stack>
             </Box>
           </>
