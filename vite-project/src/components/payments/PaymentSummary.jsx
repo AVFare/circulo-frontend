@@ -14,8 +14,8 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
   // Cambiar item.quantity por item.qty para coincidir con la estructura del carrito
   const subtotal = cart.reduce((total, item) => total + item.price * (item.qty || 1), 0);
-  const shipping = subtotal > 10000 ? 0 : 1000; // Envío gratis para compras mayores a 10k
-  const total = subtotal + shipping;
+  const shipping = 0; // Envío gratis siempre
+  const total = subtotal; // Total es igual al subtotal (sin costo de envío)
   
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', {
@@ -31,39 +31,57 @@ export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
       </Typography>
       
       <List disablePadding>
-        {cart.map((item) => (
-          <ListItem key={item.id} sx={{ py: 1, px: 0 }}>
-            <ListItemText 
-              primary={item.name} 
-              secondary={`Cantidad: ${item.qty || 1}`} 
-            />
-            <Typography variant="body2">
-              {formatPrice(item.price * (item.qty || 1))}
-            </Typography>
-          </ListItem>
-        ))}
+              {cart.map((item) => {
+                const hasDiscount = item.discount && item.discount > 0;
+                const finalPrice = hasDiscount
+                  ? item.price - (item.price * item.discount) / 100
+                  : item.price;
+                return (
+                  <ListItem key={item.id} sx={{ py: 1, px: 0 }}>
+                    <ListItemText 
+                      primary={item.name} 
+                      secondary={`Cantidad: ${item.qty || 1}`} 
+                    />
+                    <Typography variant="body2">
+                      {formatPrice(finalPrice * (item.qty || 1))}
+                    </Typography>
+                  </ListItem>
+                );
+              })}
         
         <Divider sx={{ my: 2 }} />
         
         <ListItem sx={{ py: 1, px: 0 }}>
           <ListItemText primary="Subtotal" />
-          <Typography variant="body1">
-            {formatPrice(subtotal)}
-          </Typography>
+                 <Typography variant="body1">
+                   {formatPrice(cart.reduce((acc, item) => {
+                     const hasDiscount = item.discount && item.discount > 0;
+                     const finalPrice = hasDiscount
+                       ? item.price - (item.price * item.discount) / 100
+                       : item.price;
+                     return acc + finalPrice * (item.qty || 1);
+                   }, 0))}
+                 </Typography>
         </ListItem>
         
         <ListItem sx={{ py: 1, px: 0 }}>
           <ListItemText primary="Envío" />
-          <Typography variant="body1">
-            {shipping === 0 ? 'Gratis' : formatPrice(shipping)}
+          <Typography variant="body1" sx={{ color: 'success.main', fontWeight: 600 }}>
+            ¡Gratis!
           </Typography>
         </ListItem>
         
         <ListItem sx={{ py: 1, px: 0 }}>
           <ListItemText primary={<Typography variant="h6">Total</Typography>} />
-          <Typography variant="h6">
-            {formatPrice(total)}
-          </Typography>
+                 <Typography variant="h6">
+                   {formatPrice(cart.reduce((acc, item) => {
+                     const hasDiscount = item.discount && item.discount > 0;
+                     const finalPrice = hasDiscount
+                       ? item.price - (item.price * item.discount) / 100
+                       : item.price;
+                     return acc + finalPrice * (item.qty || 1);
+                   }, 0))}
+                 </Typography>
         </ListItem>
       </List>
       
