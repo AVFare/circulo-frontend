@@ -340,8 +340,6 @@ export default function HomePage() {
                     <MenuItem value="default">Por defecto</MenuItem>
                     <MenuItem value="price-asc">Precio ↑</MenuItem>
                     <MenuItem value="price-desc">Precio ↓</MenuItem>
-                    <MenuItem value="discount-desc">Mayor Descuento</MenuItem>
-                    <MenuItem value="discount-asc">Menor Descuento</MenuItem>
                     <MenuItem value="name-asc">Nombre A-Z</MenuItem>
                     <MenuItem value="name-desc">Nombre Z-A</MenuItem>
                   </Select>
