@@ -1,37 +1,102 @@
-import { useState } from 'react';
-import { Box, Paper, Typography, TextField, Button, MenuItem, Stack } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom';
-import RecyclingIcon from '@mui/icons-material/Recycling';
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Stack,
+  Alert,
+} from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
+import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Register() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    firstname: '',
-    lastname: '',
-    email: '',
-    username: '',
-    password: '',
-    role: '',
+    firstname: "",
+    lastname: "",
+    email: "",
+    username: "",
+    password: "",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    document.title = 'Crear Cuenta - CÍRCULO';
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Registro:', form);
-    navigate('/');
+    setError("");
+    setLoading(true);
+
+    const datosAEnviar = {
+      firstname: form.firstname,
+      lastname: form.lastname,
+      email: form.email,
+      username: form.username,
+      password: form.password,
+    };
+
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datosAEnviar),
+    };
+
+    const URL = "http://localhost:4002/api/v1/auth/register";
+
+    fetch(URL, options)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error al registrar usuario");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Registro exitoso:", data);
+
+        // Guardar el token en localStorage
+        localStorage.setItem("access_token", data.access_token);
+
+        // Guardar información del usuario
+        const userInfo = {
+          firstname: form.firstname,
+          lastname: form.lastname,
+          email: form.email,
+          username: form.username,
+          role: data.role,
+        };
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+        // Redirigir al home
+        navigate("/");
+      })
+      .catch((error) => {
+        console.error("Error al obtener los datos: ", error);
+        setError("Error al registrar usuario. Intenta nuevamente.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #91AC8F 0%, #52734D 100%)',
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #DDFFBC 0%, #91AC8F 100%)",
         py: 4,
       }}
     >
@@ -40,40 +105,46 @@ export default function Register() {
         sx={{
           p: 4,
           borderRadius: 3,
-          textAlign: 'center',
-          width: '100%',
+          textAlign: "center",
+          width: "100%",
           maxWidth: 420,
           mx: 2,
         }}
       >
-                 <Box
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            bgcolor: "primary.main",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto",
+            mb: 2,
+          }}
+        >
+          <RecyclingIcon
             sx={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
-              mb: 2,
+              color: "white",
+              fontWeight: "bold",
+              fontSize: 50,
             }}
-          >
+          />
+        </Box>
 
-            <RecyclingIcon
-            sx = {{
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: 50
-                
-            }}
-            />
-
-          </Box>
-
-        <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: 'primary.main' }}>
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 800, mb: 3, color: "primary.main" }}
+        >
           Crear cuenta
         </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
@@ -84,6 +155,7 @@ export default function Register() {
               value={form.firstname}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -93,6 +165,7 @@ export default function Register() {
               value={form.lastname}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -103,6 +176,7 @@ export default function Register() {
               value={form.email}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -112,6 +186,7 @@ export default function Register() {
               value={form.username}
               onChange={handleChange}
               required
+              disabled={loading}
             />
 
             <TextField
@@ -122,20 +197,8 @@ export default function Register() {
               value={form.password}
               onChange={handleChange}
               required
+              disabled={loading}
             />
-
-            <TextField
-              select
-              fullWidth
-              label="Rol"
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              required
-            >
-              <MenuItem value="USER">Usuario</MenuItem>
-              <MenuItem value="ADMIN">Administrador</MenuItem>
-            </TextField>
 
             <Button
               type="submit"
@@ -144,25 +207,34 @@ export default function Register() {
               color="primary"
               size="large"
               sx={{ mt: 2 }}
+              disabled={loading}
             >
-              Registrarse
+              {loading ? "Registrando..." : "Registrarse"}
             </Button>
           </Stack>
         </form>
 
         <Typography variant="body2" sx={{ mt: 3 }}>
-          ¿Ya tenés cuenta?{' '}
+          ¿Ya tenés cuenta?{" "}
           <Link
             to="/"
             style={{
-              textDecoration: 'none',
+              textDecoration: "none",
               fontWeight: 700,
-              color: '#2D5016',
+              color: "#2D5016",
             }}
           >
             Iniciá sesión
           </Link>
         </Typography>
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Continuar sin registrarse a ver los productos (debes estar registrado e iniciar sesión para comprar)
+          </Typography>
+          <Button variant="outlined" color="primary" onClick={() => navigate('/inicio')}>
+            Ver productos
+          </Button>
+        </Box>
       </Paper>
     </Box>
   );
