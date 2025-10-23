@@ -20,7 +20,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PercentIcon from '@mui/icons-material/Percent';
 import SaveIcon from '@mui/icons-material/Save';
-import ImageIcon from '@mui/icons-material/Image';
+import EditIcon from "@mui/icons-material/Edit";
 
 const categories = [
   { id: 0, name: 'REMERAS' },
@@ -430,10 +430,10 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                     variant="outlined"
                     component="label"
                     fullWidth
-                    startIcon={<ImageIcon />}
+                    startIcon={<EditIcon />}
                     sx={{ py: 2, borderStyle: 'dashed' }}
                   >
-                    {formData.imageName || 'Seleccionar Imagen'}
+                    {'Editar Imagen'}
                     <input
                       type="file"
                       hidden
@@ -454,13 +454,18 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                   <Card sx={{ maxWidth: 300, mx: 'auto' }}>
                     <CardMedia
                       component="img"
-                      image={formData.imageData}
+                      image={
+                        formData.imageData.startsWith('data:')
+                          ? formData.imageData
+                          : `data:image/png;base64,${formData.imageData}`
+                      }
                       alt="Preview"
                       sx={{ height: 200, objectFit: 'cover' }}
                     />
                   </Card>
                 </Grid>
               )}
+
 
               {successMessage && (
                 <Grid item xs={12}>
