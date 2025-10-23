@@ -253,8 +253,8 @@ export default function OrderList() {
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: 'primary.light' }}>
-              <TableCell>ID</TableCell>
-              <TableCell>Usuario</TableCell>
+              <TableCell>ID Orden</TableCell>
+              <TableCell>ID Usuario</TableCell>
               <TableCell>Fecha</TableCell>
               <TableCell>Total</TableCell>
               <TableCell>Método de Pago</TableCell>
@@ -270,7 +270,7 @@ export default function OrderList() {
                   {order.user?.email || 
                    order.user?.username || 
                    order.userEmail ||
-                   (order.userId ? `Usuario ID: ${order.userId}` : 'Usuario no disponible')}
+                   (order.userId ? `#${order.userId}` : 'Usuario no disponible')}
                 </TableCell>
                 <TableCell>
                   {order.orderDate ? new Date(order.orderDate).toLocaleString('es-AR') : 'N/A'}

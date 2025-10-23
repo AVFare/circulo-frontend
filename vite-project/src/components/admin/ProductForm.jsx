@@ -40,7 +40,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       price: '',
       discount: 0,
       stock: '',
-      category: 0,
+      category: product?.category ?? '',
       status: 0,
       imageName: '',
       imageData: '',
@@ -151,7 +151,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         status: isEditMode ? formData.status : 0,
         stock: parseInt(formData.stock),
         discount: parseInt(formData.discount) || 0,
-        category: parseInt(formData.category),
+        category: formData.category,
         imageName: formData.imageName,
         imageData: formData.imageData ? formData.imageData.split(',')[1] : '',
       };
@@ -417,7 +417,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                   }}
                 >
                   {categories.map((cat) => (
-                    <MenuItem key={cat.id} value={cat.id}>
+                    <MenuItem key={cat.id} value={cat.name}>
                       {cat.name}
                     </MenuItem>
                   ))}
