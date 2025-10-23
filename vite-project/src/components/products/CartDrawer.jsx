@@ -19,7 +19,18 @@ import CheckoutFlow from '../payments/CheckoutFlow';
 
 export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty, clearCart }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const total = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const [stockError, setStockError] = useState(null);
+  
+  // Función para calcular el precio final con descuento
+  const getFinalPrice = (item) => {
+    if (item.discount && item.discount > 0) {
+      return item.price * (1 - item.discount / 100);
+    }
+    return item.price;
+  };
+
+  // Calcular el total con precios descontados
+  const total = items.reduce((acc, item) => acc + getFinalPrice(item) * item.qty, 0);
 
   const getImageSrc = (imageData) => {
     if (!imageData) return null;
@@ -42,7 +53,40 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
     }
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    setStockError(null);
+    const token = localStorage.getItem('access_token');
+    let errorItems = [];
+    for (const item of items) {
+      try {
+        const res = await fetch(`http://localhost:4002/api/item/catalog/products/${item.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error('No se pudo obtener el producto');
+        const prod = await res.json();
+        if (item.qty > prod.stock) {
+          errorItems.push({
+            name: item.name,
+            requested: item.qty,
+            available: prod.stock
+          });
+        }
+      } catch (err) {
+        errorItems.push({
+          name: item.name,
+          requested: item.qty,
+          available: 'error'
+        });
+      }
+    }
+    if (errorItems.length > 0) {
+      setStockError(errorItems);
+      return;
+    }
     setCheckoutOpen(true);
   };
 
@@ -134,9 +178,29 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
                         {item.name}
                       </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                        ${item.price.toLocaleString('es-AR')}
-                      </Typography>
+                      
+                      {/* Precio con o sin descuento */}
+                      {item.discount > 0 ? (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'text.disabled',
+                              textDecoration: 'line-through',
+                              display: 'block',
+                            }}
+                          >
+                            ${item.price.toLocaleString('es-AR')}
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                            ${getFinalPrice(item).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                          ${item.price.toLocaleString('es-AR')}
+                        </Typography>
+                      )}
 
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                         <TextField
@@ -155,7 +219,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                   </Stack>
 
                   <Typography variant="body2" sx={{ mt: 1, textAlign: 'right', fontWeight: 600 }}>
-                    Subtotal: ${(item.price * item.qty).toLocaleString('es-AR')}
+                    Subtotal: ${(getFinalPrice(item) * item.qty).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                   </Typography>
                 </ListItem>
               ))}
@@ -170,7 +234,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                     Total:
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                    ${total.toLocaleString('es-AR')}
+                    ${total.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                   </Typography>
                 </Stack>
 
@@ -183,6 +247,20 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                 >
                   Pagar ahora
                 </Button>
+                {stockError && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography color="error" variant="body1">
+                      No hay suficiente stock para los siguientes productos:
+                    </Typography>
+                    <ul style={{ color: 'red', marginLeft: 16 }}>
+                      {stockError.map((err, idx) => (
+                        <li key={idx}>
+                          {err.name}: Pediste {err.requested}, disponible {err.available}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
               </Stack>
             </Box>
           </>
