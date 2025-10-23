@@ -14,8 +14,8 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
   // Cambiar item.quantity por item.qty para coincidir con la estructura del carrito
   const subtotal = cart.reduce((total, item) => total + item.price * (item.qty || 1), 0);
-  const shipping = subtotal > 10000 ? 0 : 1000; // Envío gratis para compras mayores a 10k
-  const total = subtotal + shipping;
+  const shipping = 0; // Envío gratis siempre
+  const total = subtotal; // Total es igual al subtotal (sin costo de envío)
   
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', {
@@ -54,8 +54,8 @@ export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
         
         <ListItem sx={{ py: 1, px: 0 }}>
           <ListItemText primary="Envío" />
-          <Typography variant="body1">
-            {shipping === 0 ? 'Gratis' : formatPrice(shipping)}
+          <Typography variant="body1" sx={{ color: 'success.main', fontWeight: 600 }}>
+            ¡Gratis!
           </Typography>
         </ListItem>
         

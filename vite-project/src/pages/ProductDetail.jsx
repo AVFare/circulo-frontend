@@ -272,12 +272,45 @@ export default function ProductDetail() {
                 </Paper>
               )}
 
-              <Typography
-                variant="h3"
-                sx={{ fontWeight: 800, color: "primary.main" }}
-              >
-                ${product.price.toLocaleString("es-AR")}
-              </Typography>
+              {/* Precio con descuento */}
+              {product.discount > 0 ? (
+                <Box>
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        color: 'text.disabled',
+                        textDecoration: 'line-through',
+                      }}
+                    >
+                      ${product.price.toLocaleString('es-AR')}
+                    </Typography>
+                    <Chip
+                      label={`${product.discount}% OFF`}
+                      size="medium"
+                      sx={{
+                        bgcolor: 'success.main',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                      }}
+                    />
+                  </Stack>
+                  <Typography
+                    variant="h3"
+                    sx={{ fontWeight: 800, color: "primary.main", mt: 1 }}
+                  >
+                    ${(product.price * (1 - product.discount / 100)).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography
+                  variant="h3"
+                  sx={{ fontWeight: 800, color: "primary.main" }}
+                >
+                  ${product.price.toLocaleString("es-AR")}
+                </Typography>
+              )}
 
               <Divider />
 
