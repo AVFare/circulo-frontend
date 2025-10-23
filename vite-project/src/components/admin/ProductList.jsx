@@ -46,6 +46,7 @@ export default function ProductList({ onCloseDrawer }) {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   useEffect(() => {
     // Panel de admin: usa el endpoint que devuelve TODOS los productos (sin filtrar por status)
@@ -101,9 +102,8 @@ export default function ProductList({ onCloseDrawer }) {
 
       // Recargar la lista
       setRefreshTrigger(prev => prev + 1);
-      setSnackbarMessage('Producto eliminado exitosamente');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+      // Mostrar dialog de éxito en lugar de snackbar
+      setSuccessDialogOpen(true);
     } catch (error) {
       console.error('Error al eliminar producto:', error);
       setSnackbarMessage('Error al eliminar el producto: ' + error.message);
@@ -323,25 +323,80 @@ export default function ProductList({ onCloseDrawer }) {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmación para eliminar */}
+      {/* Dialog de confirmación para eliminar (estilizado como el modal de editar) */}
       <Dialog
         open={deleteDialogOpen}
         onClose={handleCancelDelete}
+        fullWidth
+        maxWidth="sm"
       >
-        <DialogTitle>
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
           Confirmar eliminación
+          <IconButton
+            aria-label="close"
+            onClick={handleCancelDelete}
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
-        <DialogContent>
-          <Typography>
-            ¿Está seguro de que desea eliminar este producto? Se marcará como DELETED.
+        <DialogContent sx={{ pt: 3 }}>
+          <Typography variant="h6" fontWeight={600} color="text.primary" gutterBottom>
+            ¿Está seguro de que desea eliminar este producto?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Se marcará como DELETED.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} color="inherit">
+
+        {/* Acciones con estilo similar al formulario: fondo y botones grandes */}
+        <Box p={3} bgcolor="background.default" display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={handleCancelDelete}
+          >
             Cancelar
           </Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+          <Button
+            variant="contained"
+            color="error"
+            fullWidth
+            onClick={handleConfirmDelete}
+          >
             Eliminar
+          </Button>
+        </Box>
+      </Dialog>
+
+      {/* Dialog de éxito */}
+      <Dialog
+        open={successDialogOpen}
+        onClose={() => setSuccessDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
+          Producto eliminado
+        </DialogTitle>
+        <DialogContent>
+          <Typography>Producto eliminado exitosamente.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => {
+              setSuccessDialogOpen(false);
+            }}
+          >
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>

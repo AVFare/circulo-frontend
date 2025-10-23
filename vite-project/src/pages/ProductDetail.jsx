@@ -38,6 +38,8 @@ export default function ProductDetail() {
   const [error, setError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
@@ -129,14 +131,9 @@ export default function ProductDetail() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('¿Estás seguro de eliminar este producto? Se marcará como DELETED.')) {
-      return;
-    }
-
     try {
       const token = localStorage.getItem('access_token');
-      
-      // Soft delete: cambiar estado a DELETED
+
       const response = await fetch(`http://localhost:4002/api/item/products/${id}`, {
         method: 'PUT',
         headers: {
@@ -150,13 +147,21 @@ export default function ProductDetail() {
         throw new Error('Error al eliminar producto');
       }
 
-      alert('Producto eliminado exitosamente');
-      navigate('/inicio');
+      setDeleteDialogOpen(false);
+      setSuccessDialogOpen(true);
+      // cerrar y navegar luego de mostrar el dialog
+      setTimeout(() => {
+        setSuccessDialogOpen(false);
+        navigate('/inicio');
+      }, 900);
     } catch (error) {
       console.error('Error al eliminar producto:', error);
       alert('Error al eliminar el producto: ' + error.message);
     }
   };
+
+  const openDeleteDialog = () => setDeleteDialogOpen(true);
+  const closeDeleteDialog = () => setDeleteDialogOpen(false);
 
   return (
     <Box sx={{ py: 4, minHeight: "100vh" }}>
@@ -258,7 +263,7 @@ export default function ProductDetail() {
                         color="error"
                         startIcon={<DeleteIcon />}
                         size="small"
-                        onClick={handleDelete}
+                        onClick={openDeleteDialog}
                       >
                         Eliminar
                       </Button>
@@ -419,6 +424,80 @@ export default function ProductDetail() {
               onClose={handleCloseEditModal}
             />
           </DialogContent>
+        </Dialog>
+
+        {/* Dialog de confirmación para eliminar (estilizado como el modal de editar) */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={closeDeleteDialog}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle sx={{ 
+            bgcolor: 'primary.main', 
+            color: 'white',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            Confirmar eliminación
+            <IconButton
+              aria-label="close"
+              onClick={closeDeleteDialog}
+              sx={{ color: 'white' }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ pt: 3 }}>
+            <Typography variant="h6" fontWeight={600} color="text.primary" gutterBottom>
+              ¿Está seguro de que desea eliminar este producto?
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Se marcará como DELETED.
+            </Typography>
+          </DialogContent>
+
+          <Box p={3} bgcolor="background.default" display="flex" gap={2}>
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={closeDeleteDialog}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              fullWidth
+              onClick={handleDelete}
+            >
+              Eliminar
+            </Button>
+          </Box>
+        </Dialog>
+        {/* Dialog de éxito */}
+        <Dialog
+          open={successDialogOpen}
+          onClose={() => setSuccessDialogOpen(false)}
+          fullWidth
+          maxWidth="xs"
+        >
+          <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
+            Producto eliminado
+          </DialogTitle>
+          <DialogContent>
+            <Typography>Producto eliminado exitosamente.</Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => setSuccessDialogOpen(false)}
+            >
+              Cerrar
+            </Button>
+          </DialogActions>
         </Dialog>
       </Container>
     </Box>
