@@ -19,7 +19,17 @@ import CheckoutFlow from '../payments/CheckoutFlow';
 
 export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty, clearCart }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const total = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+  
+  // Función para calcular el precio final con descuento
+  const getFinalPrice = (item) => {
+    if (item.discount && item.discount > 0) {
+      return item.price * (1 - item.discount / 100);
+    }
+    return item.price;
+  };
+
+  // Calcular el total con precios descontados
+  const total = items.reduce((acc, item) => acc + getFinalPrice(item) * item.qty, 0);
 
   const getImageSrc = (imageData) => {
     if (!imageData) return null;
@@ -134,9 +144,29 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
                         {item.name}
                       </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                        ${item.price.toLocaleString('es-AR')}
-                      </Typography>
+                      
+                      {/* Precio con o sin descuento */}
+                      {item.discount > 0 ? (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'text.disabled',
+                              textDecoration: 'line-through',
+                              display: 'block',
+                            }}
+                          >
+                            ${item.price.toLocaleString('es-AR')}
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                            ${getFinalPrice(item).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                          ${item.price.toLocaleString('es-AR')}
+                        </Typography>
+                      )}
 
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                         <TextField
@@ -155,7 +185,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                   </Stack>
 
                   <Typography variant="body2" sx={{ mt: 1, textAlign: 'right', fontWeight: 600 }}>
-                    Subtotal: ${(item.price * item.qty).toLocaleString('es-AR')}
+                    Subtotal: ${(getFinalPrice(item) * item.qty).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                   </Typography>
                 </ListItem>
               ))}
@@ -170,7 +200,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                     Total:
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                    ${total.toLocaleString('es-AR')}
+                    ${total.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
                   </Typography>
                 </Stack>
 

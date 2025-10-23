@@ -31,25 +31,37 @@ export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
       </Typography>
       
       <List disablePadding>
-        {cart.map((item) => (
-          <ListItem key={item.id} sx={{ py: 1, px: 0 }}>
-            <ListItemText 
-              primary={item.name} 
-              secondary={`Cantidad: ${item.qty || 1}`} 
-            />
-            <Typography variant="body2">
-              {formatPrice(item.price * (item.qty || 1))}
-            </Typography>
-          </ListItem>
-        ))}
+              {cart.map((item) => {
+                const hasDiscount = item.discount && item.discount > 0;
+                const finalPrice = hasDiscount
+                  ? item.price - (item.price * item.discount) / 100
+                  : item.price;
+                return (
+                  <ListItem key={item.id} sx={{ py: 1, px: 0 }}>
+                    <ListItemText 
+                      primary={item.name} 
+                      secondary={`Cantidad: ${item.qty || 1}`} 
+                    />
+                    <Typography variant="body2">
+                      {formatPrice(finalPrice * (item.qty || 1))}
+                    </Typography>
+                  </ListItem>
+                );
+              })}
         
         <Divider sx={{ my: 2 }} />
         
         <ListItem sx={{ py: 1, px: 0 }}>
           <ListItemText primary="Subtotal" />
-          <Typography variant="body1">
-            {formatPrice(subtotal)}
-          </Typography>
+                 <Typography variant="body1">
+                   {formatPrice(cart.reduce((acc, item) => {
+                     const hasDiscount = item.discount && item.discount > 0;
+                     const finalPrice = hasDiscount
+                       ? item.price - (item.price * item.discount) / 100
+                       : item.price;
+                     return acc + finalPrice * (item.qty || 1);
+                   }, 0))}
+                 </Typography>
         </ListItem>
         
         <ListItem sx={{ py: 1, px: 0 }}>
@@ -61,9 +73,15 @@ export default function PaymentSummary({ cart, paymentStatus, onComplete }) {
         
         <ListItem sx={{ py: 1, px: 0 }}>
           <ListItemText primary={<Typography variant="h6">Total</Typography>} />
-          <Typography variant="h6">
-            {formatPrice(total)}
-          </Typography>
+                 <Typography variant="h6">
+                   {formatPrice(cart.reduce((acc, item) => {
+                     const hasDiscount = item.discount && item.discount > 0;
+                     const finalPrice = hasDiscount
+                       ? item.price - (item.price * item.discount) / 100
+                       : item.price;
+                     return acc + finalPrice * (item.qty || 1);
+                   }, 0))}
+                 </Typography>
         </ListItem>
       </List>
       
