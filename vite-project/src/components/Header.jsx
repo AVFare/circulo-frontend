@@ -153,7 +153,28 @@ export default function Header({ onSearch }) {
             </Search>
           </Box>
 
-          <UserMenu />
+          {localStorage.getItem('userInfo') && localStorage.getItem('access_token') ? (
+            <UserMenu />
+          ) : (
+            <Box sx={{ ml: 2 }}>
+              <a href="/" style={{ textDecoration: 'none' }}>
+                <button
+                  class="MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-colorPrimary"
+                  type="button"
+                  style={{
+                    fontWeight: 'bold',
+                    background: '#fff',
+                    color: '#35571c',
+                    border: '1px solid #35571c',
+                    padding: '8px 16px',
+                    borderRadius: '12px'
+                  }}
+                >
+                  Iniciar Sesión
+                </button>
+              </a>
+            </Box>
+          )}
         </Toolbar>
       </Container>
     </AppBar>
