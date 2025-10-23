@@ -63,6 +63,9 @@ export default function HomePage() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Estados de validación para precios
+  const [minPriceError, setMinPriceError] = useState('');
+  const [maxPriceError, setMaxPriceError] = useState('');
 
   // Establecer título de la página
   useEffect(() => {
@@ -81,6 +84,15 @@ export default function HomePage() {
 
   // Fetch productos con filtros
   useEffect(() => {
+    // Si hay errores en los filtros de precio, no hacemos la petición
+    if (minPriceError || maxPriceError) {
+      setLoading(false);
+      setProducts([]);
+      setTotalElements(0);
+      setTotalPages(0);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -119,7 +131,7 @@ export default function HomePage() {
         setError('Error al cargar los productos. Intenta nuevamente.');
         setLoading(false);
       });
-  }, [currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted]);
+  }, [currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted, minPriceError, maxPriceError]);
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -130,6 +142,66 @@ export default function HomePage() {
     setSortBy('id');
     setSortDirection('asc');
     setCurrentPage(0);
+    // Resetear errores de validación
+    setMinPriceError('');
+    setMaxPriceError('');
+  };
+
+  // Handlers para validar min/max
+  const handleMinPriceChange = (value) => {
+    // Guardar el valor tal cual (cadena vacía posible)
+    setMinPrice(value);
+    setCurrentPage(0);
+
+    // Validación: si hay maxPrice y minPrice no puede ser mayor
+    if (value === '' || value === null) {
+      setMinPriceError('');
+      // si max está bien, limpiar error de max
+      if (!maxPrice || maxPrice === '') setMaxPriceError('');
+      return;
+    }
+
+    const minNum = Number(value);
+    const maxNum = maxPrice !== '' ? Number(maxPrice) : null;
+
+    if (Number.isNaN(minNum) || !Number.isFinite(minNum) || minNum < 0) {
+      setMinPriceError('Precio mínimo inválido');
+      return;
+    }
+
+    if (maxNum !== null && !Number.isNaN(maxNum) && minNum > maxNum) {
+      setMinPriceError('El precio mínimo no puede ser mayor que el precio máximo');
+    } else {
+      setMinPriceError('');
+      // si anteriormente había error en max y ahora está ok, limpiarlo
+      if (maxPriceError && !(maxNum !== null && minNum > maxNum)) setMaxPriceError('');
+    }
+  };
+
+  const handleMaxPriceChange = (value) => {
+    setMaxPrice(value);
+    setCurrentPage(0);
+
+    if (value === '' || value === null) {
+      setMaxPriceError('');
+      if (!minPrice || minPrice === '') setMinPriceError('');
+      return;
+    }
+
+    const maxNum = Number(value);
+    const minNum = minPrice !== '' ? Number(minPrice) : null;
+
+    if (Number.isNaN(maxNum) || !Number.isFinite(maxNum) || maxNum < 0) {
+      setMaxPriceError('Precio máximo inválido');
+      return;
+    }
+
+    if (minNum !== null && !Number.isNaN(minNum) && maxNum < minNum) {
+      setMaxPriceError('El precio máximo no puede ser menor que el precio mínimo');
+    } else {
+      setMaxPriceError('');
+      if (minPriceError && !(minNum !== null && maxNum < minNum)) setMinPriceError('');
+    }
   };
 
   const handleSortChange = (e) => {
@@ -230,10 +302,9 @@ export default function HomePage() {
                   label="Precio mín."
                   type="number"
                   value={minPrice}
-                  onChange={(e) => {
-                    setMinPrice(e.target.value);
-                    setCurrentPage(0);
-                  }}
+                  onChange={(e) => handleMinPriceChange(e.target.value)}
+                  error={!!minPriceError}
+                  helperText={minPriceError}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
@@ -248,10 +319,9 @@ export default function HomePage() {
                   label="Precio máx."
                   type="number"
                   value={maxPrice}
-                  onChange={(e) => {
-                    setMaxPrice(e.target.value);
-                    setCurrentPage(0);
-                  }}
+                  onChange={(e) => handleMaxPriceChange(e.target.value)}
+                  error={!!maxPriceError}
+                  helperText={maxPriceError}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
