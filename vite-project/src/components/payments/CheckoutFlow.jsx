@@ -64,7 +64,7 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
 
     // Mapear el método de pago al formato del backend
     const paymentMethodMap = {
-      'card': 'CARD',
+      'card': 'TARJETA',
       'mercadopago': 'MERCADOPAGO'
     };
 
