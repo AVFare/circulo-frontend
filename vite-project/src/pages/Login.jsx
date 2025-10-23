@@ -221,18 +221,6 @@ export default function Login() {
               Registrate
             </Link>
           </Typography>
-          <Typography variant="body2" sx={{ mt: 3 }}>
-            <Link
-              to="/cambiar-contraseña"
-              style={{
-                textDecoration: "none",
-                fontWeight: 700,
-                color: "#2D5016",
-              }}
-            >
-              Olvidé mi contraseña
-            </Link>
-          </Typography>
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Typography variant="body2" sx={{ mb: 1 }}>
             Continuar sin registrarse a ver los productos (debes estar registrado e iniciar sesión para comprar)
