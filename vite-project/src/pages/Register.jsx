@@ -227,6 +227,14 @@ export default function Register() {
             Iniciá sesión
           </Link>
         </Typography>
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Continuar sin registrarse a ver los productos (debes estar registrado e iniciar sesión para comprar)
+          </Typography>
+          <Button variant="outlined" color="primary" onClick={() => navigate('/inicio')}>
+            Ver productos
+          </Button>
+        </Box>
       </Paper>
     </Box>
   );
