@@ -233,8 +233,16 @@ export default function Login() {
               Olvidé mi contraseña
             </Link>
           </Typography>
-        </Paper>
-      </Container>
-    </Box>
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Continuar sin registrarse a ver los productos (debes estar registrado e iniciar sesión para comprar)
+          </Typography>
+          <Button variant="outlined" color="primary" onClick={() => navigate('/inicio')}>
+            Ver productos
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
+  </Box>
   );
 }
