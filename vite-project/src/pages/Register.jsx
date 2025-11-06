@@ -9,10 +9,14 @@ import {
   Alert,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser, clearError } from "../redux/authSlice";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Register() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.auth);
   const [form, setForm] = useState({
     firstname: "",
     lastname: "",
@@ -21,16 +25,16 @@ export default function Register() {
     password: "",
   });
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
   // Para resaltar campo si el mensaje del backend lo menciona
   const emailHasError = /email/i.test(error);
   const usernameHasError = /usuario|username/i.test(error);
 
   useEffect(() => {
     document.title = "Crear Cuenta - CÍRCULO";
-  }, []);
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,66 +42,9 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const datosAEnviar = {
-      firstname: form.firstname,
-      lastname: form.lastname,
-      email: form.email,
-      username: form.username,
-      password: form.password,
-    };
-
-    const URL = "http://localhost:4002/api/v1/auth/register";
-
-    try {
-      const response = await fetch(URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datosAEnviar),
-      });
-
-      // Si vino con error, intento leer el JSON y levantar el message
-      if (!response.ok) {
-        let message = "Error al registrar usuario";
-        try {
-          const ct = response.headers.get("content-type") || "";
-          if (ct.includes("application/json")) {
-            const errorData = await response.json();
-            if (errorData?.message) message = errorData.message;
-          } else {
-            // Si no es JSON, intento leer como texto
-            const text = await response.text();
-            if (text) message = text;
-          }
-        } catch (_) {
-          // ignoramos errores de parseo y usamos el message por defecto
-        }
-        throw new Error(message);
-      }
-
-      const data = await response.json();
-
-      // Tu backend devuelve "accessToken"
-      localStorage.setItem("access_token", data.accessToken);
-
-      const userInfo = {
-        firstname: form.firstname,
-        lastname: form.lastname,
-        email: form.email,
-        username: form.username,
-        role: data.role,
-      };
-      localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-      // Redirigir al home
-      navigate("/");
-    } catch (err) {
-      console.error("Error registrando usuario:", err);
-      setError(err.message || "Error al registrar usuario. Intenta nuevamente.");
-    } finally {
-      setLoading(false);
+    const result = await dispatch(registerUser(form));
+    if (registerUser.fulfilled.match(result)) {
+      navigate("/inicio");
     }
   };
 
