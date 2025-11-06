@@ -11,88 +11,34 @@ import {
   Alert,
 } from "@mui/material";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser, clearError } from "../redux/authSlice";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.auth);
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     document.title = 'Iniciar Sesión - CÍRCULO';
-  }, []);
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const datosAEnviar = {
-      email: form.email,
-      password: form.password,
-    };
-
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(datosAEnviar),
-    };
-
-    const URL = "http://localhost:4002/api/v1/auth/login";
-
-    fetch(URL, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Error al iniciar sesión");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Login exitoso:", data);
-
-        // Guardar el token en localStorage
-        const token = data.access_token || data.accessToken;
-        if (token) localStorage.setItem("access_token", token);
-
-        // Extraer id del response o del token y guardar como const
-        let id = null;
-        try {
-          id = data?.id ?? data?.userId ?? data?.user?.id ?? null;
-          if (id != null) {
-            const n = Number(id);
-            if (!Number.isNaN(n) && Number.isFinite(n)) id = n; else id = null;
-          }
-        } catch (err) {
-          id = null;
-        }
-
-        // Guardar información del usuario (email, role y id numérico si lo tenemos)
-        const userInfo = {
-          email: form.email,
-          role: data.role,
-        };
-        const userId = id;
-        if (userId != null) userInfo.id = userId;
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-        // Redirigir al home (ajusta la ruta según tu app)
-        navigate("/inicio");
-      })
-      .catch((error) => {
-        console.error("Error al iniciar sesión: ", error);
-        setError("Credenciales inválidas. Intenta nuevamente.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const result = await dispatch(loginUser(form));
+    if (loginUser.fulfilled.match(result)) {
+      navigate("/inicio");
+    }
   };
 
   return (
