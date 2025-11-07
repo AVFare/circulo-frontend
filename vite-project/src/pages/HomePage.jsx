@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts } from '../redux/productSlice';
 import { 
   Box, 
   Container, 
@@ -42,6 +44,8 @@ const PAGE_SIZE_OPTIONS = [12, 24, 48, 96];
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addToCart } = useOutletContext();
+  const dispatch = useDispatch();
+  const { items: products, totalPages, totalElements, loading, error } = useSelector((state) => state.products);
   
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -57,12 +61,6 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
   
-  // Estados de datos
-  const [products, setProducts] = useState([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   // Estados de validación para precios
   const [minPriceError, setMinPriceError] = useState('');
   const [maxPriceError, setMaxPriceError] = useState('');
@@ -86,52 +84,25 @@ export default function HomePage() {
   useEffect(() => {
     // Si hay errores en los filtros de precio, no hacemos la petición
     if (minPriceError || maxPriceError) {
-      setLoading(false);
-      setProducts([]);
-      setTotalElements(0);
-      setTotalPages(0);
       return;
     }
 
-    setLoading(true);
-    setError('');
-
-    const params = new URLSearchParams();
-    params.append('page', currentPage);
-    params.append('size', pageSize);
-    params.append('sortBy', sortBy);
-    params.append('sortDirection', sortDirection);
+    const filters = {
+      page: currentPage,
+      size: pageSize,
+      sortBy,
+      sortDirection,
+      inStock: true,
+    };
     
-    if (searchTerm) params.append('name', searchTerm);
-    if (selectedCategory) params.append('category', selectedCategory);
-    if (minPrice) params.append('minPrice', minPrice);
-    if (maxPrice) params.append('maxPrice', maxPrice);
-    if (showOnlyDiscounted) params.append('hasDiscount', 'true');
-    // Catálogo público: solo mostrar productos con stock
-    params.append('inStock', 'true');
+    if (searchTerm) filters.name = searchTerm;
+    if (selectedCategory) filters.category = selectedCategory;
+    if (minPrice) filters.minPrice = minPrice;
+    if (maxPrice) filters.maxPrice = maxPrice;
+    if (showOnlyDiscounted) filters.hasDiscount = true;
 
-    const URL = `http://localhost:4002/api/item/catalog/products/search?${params.toString()}`;
-
-    fetch(URL, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Error al cargar productos');
-        return response.json();
-      })
-      .then((data) => {
-        setProducts(data.content);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        setError('Error al cargar los productos. Intenta nuevamente.');
-        setLoading(false);
-      });
-  }, [currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted, minPriceError, maxPriceError]);
+    dispatch(fetchProducts(filters));
+  }, [dispatch, currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted, minPriceError, maxPriceError]);
 
   const handleClearFilters = () => {
     setSearchTerm('');
