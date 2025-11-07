@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUsers } from '../../redux/userSlice';
 import {
   Box,
   Typography,
@@ -34,60 +36,19 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 import LastPageIcon from '@mui/icons-material/LastPage';
 
 export default function UserList() {
-  const [userList, setUserList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const dispatch = useDispatch();
+  const { items: userList, totalPages, totalElements, loading, error } = useSelector((state) => state.users);
+  
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userOrders, setUserOrders] = useState([]);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
-  }, [page, rowsPerPage]);
-
-  const fetchUsers = () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setError('No se encontró token de autenticación');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    };
-
-    const url = `http://localhost:4002/api/user/users?page=${page}&size=${rowsPerPage}&sortBy=id&sortDirection=asc`;
-
-    fetch(url, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Error al cargar usuarios');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setUserList(data.content || []);
-        setTotalPages(data.totalPages || 0);
-        setTotalElements(data.totalElements || 0);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error al obtener usuarios:', error);
-        setError('No se pudieron cargar los usuarios');
-        setLoading(false);
-      });
-  };
+    dispatch(fetchUsers({ page, size: rowsPerPage, sortBy: 'id', sortDirection: 'asc' }));
+  }, [dispatch, page, rowsPerPage]);
 
   const fetchUserDetails = (userId) => {
     const token = localStorage.getItem('access_token');
