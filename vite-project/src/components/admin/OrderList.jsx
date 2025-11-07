@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchOrders } from '../../redux/orderSlice';
 import {
   Box,
   Typography,
@@ -34,64 +36,19 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 import LastPageIcon from '@mui/icons-material/LastPage';
 
 export default function OrderList() {
-  const [orderList, setOrderList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const dispatch = useDispatch();
+  const { items: orderList, totalPages, totalElements, loading, error } = useSelector((state) => state.orders);
+  
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
-    fetchOrders();
-  }, [page, rowsPerPage]);
-
-  const fetchOrders = () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setError('No se encontró token de autenticación');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(''); // Limpiar errores previos
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    };
-
-    const url = `http://localhost:4002/api/action/orders?page=${page}&size=${rowsPerPage}`;
-
-    fetch(url, options)
-      .then((response) => {
-        if (!response.ok) {
-          return response.text().then(text => {
-            console.error('Admin error response:', text);
-            throw new Error(`Error ${response.status}: ${text}`);
-          });
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setOrderList(data.content || []);
-        setTotalPages(data.totalPages || 0);
-        setTotalElements(data.totalElements || 0);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error al obtener órdenes:', error);
-        setError('No se pudieron cargar las órdenes');
-        setLoading(false);
-      });
-  };
+    dispatch(fetchOrders({ page, size: rowsPerPage }));
+  }, [dispatch, page, rowsPerPage]);
 
   const fetchUserDetails = (userId) => {
     const token = localStorage.getItem('access_token');
