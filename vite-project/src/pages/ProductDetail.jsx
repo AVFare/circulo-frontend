@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductById, clearCurrentProduct } from "../redux/productSlice";
 import {
   Box,
   Container,
@@ -31,11 +33,11 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useOutletContext();
+  const dispatch = useDispatch();
+  const { currentProduct: product, loading, error } = useSelector((state) => state.products);
+  
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -52,37 +54,18 @@ export default function ProductDetail() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    setError('');
-
-    const URL = `http://localhost:4002/api/item/catalog/products/${id}`;
-
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    dispatch(fetchProductById(id));
+    
+    return () => {
+      dispatch(clearCurrentProduct());
     };
+  }, [dispatch, id, refreshTrigger]);
 
-    fetch(URL, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Producto no encontrado');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProduct(data);
-        setLoading(false);
-        // Actualizar título con el nombre del producto
-        document.title = `${data.name} - CÍRCULO`;
-      })
-      .catch((error) => {
-        console.error('Error al obtener el producto: ', error);
-        setError('No se pudo cargar el producto');
-        setLoading(false);
-      });
-  }, [id, refreshTrigger]);
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} - CÍRCULO`;
+    }
+  }, [product]);
 
   if (loading) {
     return (
