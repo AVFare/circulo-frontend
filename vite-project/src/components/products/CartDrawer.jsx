@@ -16,10 +16,15 @@ import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import ImageIcon from '@mui/icons-material/Image';
 import { useState } from 'react';
 import CheckoutFlow from '../payments/CheckoutFlow';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCartItems, selectCartTotal, removeFromCart, changeQty, clearCart } from '../../redux/cartSlice';
 
-export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty, clearCart }) {
+export default function CartDrawer({ open, onClose }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [stockError, setStockError] = useState(null);
+  const dispatch = useDispatch();
+  const items = useSelector(selectCartItems);
+  const total = useSelector(selectCartTotal);
   
   // Función para calcular el precio final con descuento
   const getFinalPrice = (item) => {
@@ -29,8 +34,7 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
     return item.price;
   };
 
-  // Calcular el total con precios descontados
-  const total = items.reduce((acc, item) => acc + getFinalPrice(item) * item.qty, 0);
+  // total calculado desde selector en Redux
 
   const getImageSrc = (imageData) => {
     if (!imageData) return null;
@@ -92,8 +96,8 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
 
   const handleOrderComplete = (orderData) => {
     console.log('Orden completada:', orderData);
-    // Usar la función clearCart para limpiar el carrito cuando se complete la compra
-    clearCart();
+  // Usar la acción clearCart para limpiar el carrito cuando se complete la compra
+  dispatch(clearCart());
     setCheckoutOpen(false);
     onClose(); // Cerrar el drawer también
   };
@@ -206,12 +210,12 @@ export default function CartDrawer({ open, onClose, items, onRemove, onChangeQty
                         <TextField
                           type="number"
                           value={item.qty}
-                          onChange={(e) => onChangeQty(item.id, parseInt(e.target.value))}
+                          onChange={(e) => dispatch(changeQty({ id: item.id, qty: parseInt(e.target.value) || 0 }))}
                           size="small"
                           inputProps={{ min: 1, style: { textAlign: 'center' } }}
                           sx={{ width: 70 }}
                         />
-                        <IconButton size="small" onClick={() => onRemove(item.id)} color="error">
+                        <IconButton size="small" onClick={() => dispatch(removeFromCart(item.id))} color="error">
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </Stack>
