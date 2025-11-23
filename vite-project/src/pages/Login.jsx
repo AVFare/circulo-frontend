@@ -12,14 +12,14 @@ import {
 } from "@mui/material";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, clearError } from "../redux/authSlice";
+import { loginUser, clearError } from "../redux/userSlice";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading, error } = useSelector((state) => state.user);
   const [form, setForm] = useState({ email: "", password: "" });
 
   useEffect(() => {

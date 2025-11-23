@@ -20,7 +20,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 export default function Profile() {
   const dispatch = useDispatch();
-  const { profile, loading, error } = useSelector((state) => state.users);
+  const { profile, loading, error } = useSelector((state) => state.user);
 
   useEffect(() => {
     document.title = 'Mi Perfil - CÍRCULO';

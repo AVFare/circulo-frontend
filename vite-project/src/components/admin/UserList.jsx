@@ -37,7 +37,7 @@ import LastPageIcon from '@mui/icons-material/LastPage';
 
 export default function UserList() {
   const dispatch = useDispatch();
-  const { items: userList, totalPages, totalElements, loading, error } = useSelector((state) => state.users);
+  const { users: userList, totalPages, totalElements, loading, error } = useSelector((state) => state.user);
   
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
