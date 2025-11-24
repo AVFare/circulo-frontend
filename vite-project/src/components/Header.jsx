@@ -5,7 +5,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 import { useState, useEffect } from 'react';
-import AdminDrawer from './admin/AdminDrawer';
 import UserMenu from './UserMenu';
 
 const Search = styled('div')(({ theme }) => ({
@@ -98,12 +97,6 @@ export default function Header({ onSearch }) {
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-            {/* Mostrar AdminDrawer solo para usuarios admin */}
-            {user && user.role === 'ADMIN' && (
-              <AdminDrawer onNavigate={(section) => {
-                // Aquí podrías manejar la navegación o abrir modales según la sección
-              }} />
-            )}
 
             {/* Logo q usamos en toda la app: MATERIAL UI CODED  */}
             <Typography
