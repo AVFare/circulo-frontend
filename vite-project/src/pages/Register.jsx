@@ -10,13 +10,13 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser, clearError } from "../redux/authSlice";
+import { registerUser, clearError } from "../redux/userSlice";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading, error } = useSelector((state) => state.user);
   const [form, setForm] = useState({
     firstname: "",
     lastname: "",
