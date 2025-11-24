@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart as addToCartAction, selectCartCount } from '../redux/cartSlice';
 import { Outlet } from 'react-router-dom';
 import { Fab, Badge, Box } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -7,9 +9,10 @@ import CartDrawer from '../components/products/CartDrawer.jsx';
 import AdminPanel from '../components/admin/AdminPanel.jsx'; // Importa el AdminPanel
 
 export default function MainLayout() {
-  const [cart, setCart] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const dispatch = useDispatch();
+  const cartCount = useSelector(selectCartCount);
 
   useEffect(() => {
     // Recuperar datos de usuario del localStorage
@@ -19,35 +22,7 @@ export default function MainLayout() {
     }
   }, []);
 
-  const addToCart = (product) => {
-    setCart((prev) => {
-      const exists = prev.find((item) => item.id === product.id);
-      if (exists) {
-        return prev.map((item) =>
-          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
-        );
-      }
-      return [...prev, { ...product, qty: 1 }];
-    });
-  };
-
-  const removeFromCart = (id) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const changeQty = (id, qty) => {
-    setCart((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty: Math.max(1, qty) } : item
-      )
-    );
-  };
-
-  const clearCart = () => {
-    setCart([]);
-  };
-
-  const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
+  const addToCart = (product) => dispatch(addToCartAction(product));
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -81,10 +56,6 @@ export default function MainLayout() {
       <CartDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        items={cart}
-        onRemove={removeFromCart}
-        onChangeQty={changeQty}
-        clearCart={clearCart}
       />
     </Box>
   );
