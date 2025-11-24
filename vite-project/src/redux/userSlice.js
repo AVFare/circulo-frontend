@@ -175,6 +175,9 @@ const userSlice = createSlice({
         state.loading = false;
         // Actualiza el perfil con todos los datos del usuario
         state.profile = action.payload;
+        localStorage.setItem("userInfo", JSON.stringify({
+          ...state.profile
+        }));
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
