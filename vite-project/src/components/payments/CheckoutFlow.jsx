@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { 
   Dialog, 
   DialogTitle, 
@@ -18,6 +19,9 @@ import PaymentSummary from './PaymentSummary';
 const STEPS = ['Datos personales', 'Método de pago', 'Confirmación'];
 
 export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
+  const token = useSelector((state) => state.user.token);
+  const userInfo = useSelector((state) => state.user.profile);
+  
   const [activeStep, setActiveStep] = useState(0);
   const [customerData, setCustomerData] = useState({
     firstName: '',
@@ -52,11 +56,7 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
   };
 
   const handleComplete = () => {
-    // Obtener token y usuario del localStorage
-    const token = localStorage.getItem('access_token');
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-    
-    if (!token || !userInfo.id) {
+    if (!token || !userInfo?.id) {
       console.error('No se encontró token o ID de usuario');
       alert('Error: No hay sesión activa. Por favor inicia sesión.');
       return;

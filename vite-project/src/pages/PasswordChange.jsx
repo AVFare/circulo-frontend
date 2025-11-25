@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   Box,
   Button,
@@ -17,6 +18,9 @@ import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function PasswordChange() {
   const navigate = useNavigate();
+  const token = useSelector((state) => state.user.token);
+  const userInfo = useSelector((state) => state.user.profile);
+  
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -35,16 +39,11 @@ export default function PasswordChange() {
   };
 
   const getUserId = () => {
-    // intentar obtener id desde userInfo en localStorage y devolver Number (long)
     try {
-      const raw = localStorage.getItem("userInfo");
-      if (raw) {
-        const user = JSON.parse(raw);
-        const candidate = user?.id ?? user?.userId ?? null;
-        if (candidate != null) {
-          const n = Number(candidate);
-          if (!Number.isNaN(n) && Number.isFinite(n)) return n;
-        }
+      const candidate = userInfo?.id ?? userInfo?.userId ?? null;
+      if (candidate != null) {
+        const n = Number(candidate);
+        if (!Number.isNaN(n) && Number.isFinite(n)) return n;
       }
     } catch (err) {
       /* ignore */
@@ -52,7 +51,6 @@ export default function PasswordChange() {
 
     // fallback: intentar decodificar el payload del JWT (access_token) y extraer id numérico
     try {
-      const token = localStorage.getItem("access_token");
       if (!token) return null;
       const parts = token.split(".");
       if (parts.length < 2) return null;
@@ -90,8 +88,6 @@ export default function PasswordChange() {
     const datosAEnviar = {
       password: form.password,
     };
-
-    const token = localStorage.getItem("access_token");
 
     const options = {
       method: "PUT", // ajustar a PATCH si el backend espera PATCH

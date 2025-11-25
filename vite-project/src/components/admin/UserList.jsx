@@ -38,6 +38,7 @@ import LastPageIcon from '@mui/icons-material/LastPage';
 export default function UserList() {
   const dispatch = useDispatch();
   const { users: userList, totalPages, totalElements, loading, error } = useSelector((state) => state.user);
+  const token = useSelector((state) => state.user.token);
   
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -51,7 +52,6 @@ export default function UserList() {
   }, [dispatch, page, rowsPerPage]);
 
   const fetchUserDetails = (userId) => {
-    const token = localStorage.getItem('access_token');
     const options = {
       method: 'GET',
       headers: {

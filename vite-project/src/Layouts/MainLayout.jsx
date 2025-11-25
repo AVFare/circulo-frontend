@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart as addToCartAction, selectCartCount } from '../redux/cartSlice';
 import { Outlet } from 'react-router-dom';
@@ -6,35 +6,23 @@ import { Fab, Badge, Box } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import Header from '../components/Header.jsx';
 import CartDrawer from '../components/products/CartDrawer.jsx';
-import AdminPanel from '../components/admin/AdminPanel.jsx'; // Importa el AdminPanel
+import AdminPanel from '../components/admin/AdminPanel.jsx';
 
 export default function MainLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [user, setUser] = useState(null);
   const dispatch = useDispatch();
   const cartCount = useSelector(selectCartCount);
-
-  useEffect(() => {
-    // Recuperar datos de usuario del localStorage
-    const userData = localStorage.getItem('userInfo');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  const user = useSelector((state) => state.user.profile);
 
   const addToCart = (product) => dispatch(addToCartAction(product));
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* Muestra el AdminPanel solo si el usuario no es "user" */}
-      {user && user.role !== 'user' && <AdminPanel />}
-      
       <Header />
       <Box sx={{ flexGrow: 1, bgcolor: 'background.default' }}>
         <Outlet context={{ addToCart }} />
       </Box>
 
-      {/* Mostrar botón del carrito solo si NO es admin */}
       {(!user || user.role !== 'ADMIN') && (
         <Fab
           color="primary"

@@ -15,8 +15,7 @@ axios.interceptors.response.use(
   }
 );
 
-const getAuthConfig = () => {
-  const token = localStorage.getItem('access_token');
+const getAuthConfig = (token) => {
   return {
     headers: {
       'Content-Type': 'application/json',
@@ -67,27 +66,30 @@ export const fetchProductById = createAsyncThunk(
 
 export const fetchAdminProducts = createAsyncThunk(
   "products/fetchAdminProducts",
-  async () => {
-    const { data } = await axios.get(CATALOG_URL, getAuthConfig());
+  async (_, { getState }) => {
+    const token = getState().user.token;
+    const { data } = await axios.get(CATALOG_URL, getAuthConfig(token));
     return data;
   }
 );
 
 export const createProduct = createAsyncThunk(
   "products/createProduct",
-  async (productData) => {
-    const { data } = await axios.post(PRODUCTS_URL, productData, getAuthConfig());
+  async (productData, { getState }) => {
+    const token = getState().user.token;
+    const { data } = await axios.post(PRODUCTS_URL, productData, getAuthConfig(token));
     return data;
   }
 );
 
 export const updateProduct = createAsyncThunk(
   "products/updateProduct",
-  async ({ id, productData }) => {
+  async ({ id, productData }, { getState }) => {
+    const token = getState().user.token;
     const { data } = await axios.put(
       `${PRODUCTS_URL}/${id}`,
       productData,
-      getAuthConfig()
+      getAuthConfig(token)
     );
     return data;
   }
@@ -95,11 +97,12 @@ export const updateProduct = createAsyncThunk(
 
 export const deleteProduct = createAsyncThunk(
   "products/deleteProduct",
-  async ({ id, status = 2 }) => {
+  async ({ id, status = 2 }, { getState }) => {
+    const token = getState().user.token;
     const { data } = await axios.put(
       `${PRODUCTS_URL}/${id}`,
       { status },
-      getAuthConfig()
+      getAuthConfig(token)
     );
     return data || { id, status };
   }

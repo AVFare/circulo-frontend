@@ -38,6 +38,7 @@ import LastPageIcon from '@mui/icons-material/LastPage';
 export default function OrderList() {
   const dispatch = useDispatch();
   const { items: orderList, totalPages, totalElements, loading, error } = useSelector((state) => state.orders);
+  const token = useSelector((state) => state.user.token);
   
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -51,7 +52,6 @@ export default function OrderList() {
   }, [dispatch, page, rowsPerPage]);
 
   const fetchUserDetails = (userId) => {
-    const token = localStorage.getItem('access_token');
     const options = {
       method: 'GET',
       headers: {
@@ -91,7 +91,6 @@ export default function OrderList() {
   };
 
   const handleStatusChange = (orderId, newStatus) => {
-    const token = localStorage.getItem('access_token');
     if (!token) {
       alert('No se encontró token de autenticación');
       return;

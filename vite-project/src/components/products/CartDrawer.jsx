@@ -25,6 +25,7 @@ export default function CartDrawer({ open, onClose }) {
   const dispatch = useDispatch();
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
+  const token = useSelector((state) => state.user.token);
   
   // Función para calcular el precio final con descuento
   const getFinalPrice = (item) => {
@@ -59,7 +60,6 @@ export default function CartDrawer({ open, onClose }) {
 
   const handleCheckout = async () => {
     setStockError(null);
-    const token = localStorage.getItem('access_token');
     let errorItems = [];
     for (const item of items) {
       try {

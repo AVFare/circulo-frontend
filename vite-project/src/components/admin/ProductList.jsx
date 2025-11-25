@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   Box,
   Typography,
@@ -33,6 +34,8 @@ import ProductForm from "./ProductForm";
 
 export default function ProductList({ onCloseDrawer }) {
   const navigate = useNavigate();
+  const token = useSelector((state) => state.user.token);
+  
   const [productList, setProductList] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -84,8 +87,6 @@ export default function ProductList({ onCloseDrawer }) {
 
   const handleConfirmDelete = async () => {
     try {
-      const token = localStorage.getItem("access_token");
-
       // Soft delete: cambiar estado a DELETED
       const response = await fetch(
         `http://localhost:4002/api/item/products/${productToDelete}`,

@@ -39,23 +39,17 @@ export default function ProductDetail() {
     loading,
     error,
   } = useSelector((state) => state.products);
+  const user = useSelector((state) => state.user.profile);
+  const token = useSelector((state) => state.user.token);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  useEffect(() => {
-    // Verificar si el usuario es admin
-    const userInfo = localStorage.getItem("userInfo");
-    if (userInfo) {
-      const user = JSON.parse(userInfo);
-      setIsAdmin(user.role === "ADMIN");
-    }
-  }, []);
+  const isAdmin = user?.role === "ADMIN";
 
   useEffect(() => {
     dispatch(fetchProductById(id));
@@ -97,7 +91,7 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    if (localStorage.getItem("userInfo")) {
+    if (user) {
       addToCart(product);
       setSnackbarOpen(true);
     } else {
@@ -121,8 +115,6 @@ export default function ProductDetail() {
 
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem("access_token");
-
       const response = await fetch(
         `http://localhost:4002/api/item/products/${id}`,
         {
@@ -163,7 +155,7 @@ export default function ProductDetail() {
         </IconButton>
 
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper
               elevation={0}
               sx={{
@@ -205,7 +197,7 @@ export default function ProductDetail() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={2}>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
                 {product.name}
