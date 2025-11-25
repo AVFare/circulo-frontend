@@ -28,6 +28,7 @@ import GridViewIcon from '@mui/icons-material/GridView';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ProductsGrid from '../components/products/ProductsGrid.jsx';
+import { clearRefresh } from "../redux/productSlice";
 
 const CATEGORIES = [
   'REMERAS',
@@ -46,7 +47,8 @@ export default function HomePage() {
   const { addToCart } = useOutletContext();
   const dispatch = useDispatch();
   const { items: products, totalPages, totalElements, loading, error } = useSelector((state) => state.products);
-  
+  const shouldRefresh = useSelector((state) => state.products.shouldRefresh);
+
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -103,6 +105,28 @@ export default function HomePage() {
 
     dispatch(fetchProducts(filters));
   }, [dispatch, currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted, minPriceError, maxPriceError]);
+
+  useEffect(() => {
+    if (!shouldRefresh) return;
+
+    const filters = {
+      page: currentPage,
+      size: pageSize,
+      sortBy,
+      sortDirection,
+      inStock: true,
+    };
+
+    if (searchTerm) filters.name = searchTerm;
+    if (selectedCategory) filters.category = selectedCategory;
+    if (minPrice) filters.minPrice = minPrice;
+    if (maxPrice) filters.maxPrice = maxPrice;
+    if (showOnlyDiscounted) filters.hasDiscount = true;
+
+    dispatch(fetchProducts(filters));
+    dispatch(clearRefresh());
+  }, [shouldRefresh]);
+
 
   const handleClearFilters = () => {
     setSearchTerm('');
