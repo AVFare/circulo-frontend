@@ -3,9 +3,7 @@ import axios from "axios";
 
 const URL = "http://localhost:4002/api/action";
 
-// Configurar axios para incluir el token automáticamente
-const getAuthConfig = () => {
-  const token = localStorage.getItem('access_token');
+const getAuthConfig = (token) => {
   return {
     headers: {
       'Content-Type': 'application/json',
@@ -16,10 +14,11 @@ const getAuthConfig = () => {
 
 export const fetchOrders = createAsyncThunk(
   "orders/fetchOrders",
-  async ({ page = 0, size = 10 }) => {
+  async ({ page = 0, size = 10 }, { getState }) => {
+    const token = getState().user.token;
     const { data } = await axios.get(
       `${URL}/orders?page=${page}&size=${size}`,
-      getAuthConfig()
+      getAuthConfig(token)
     );
     return data;
   }
@@ -27,10 +26,11 @@ export const fetchOrders = createAsyncThunk(
 
 export const fetchOrderById = createAsyncThunk(
   "orders/fetchOrderById",
-  async (orderId) => {
+  async (orderId, { getState }) => {
+    const token = getState().user.token;
     const { data } = await axios.get(
       `${URL}/orders/${orderId}`,
-      getAuthConfig()
+      getAuthConfig(token)
     );
     return data;
   }
@@ -38,11 +38,12 @@ export const fetchOrderById = createAsyncThunk(
 
 export const createOrder = createAsyncThunk(
   "orders/createOrder",
-  async (orderData) => {
+  async (orderData, { getState }) => {
+    const token = getState().user.token;
     const { data } = await axios.post(
       `${URL}/orders`,
       orderData,
-      getAuthConfig()
+      getAuthConfig(token)
     );
     return data;
   }
@@ -50,11 +51,12 @@ export const createOrder = createAsyncThunk(
 
 export const updateOrderStatus = createAsyncThunk(
   "orders/updateOrderStatus",
-  async ({ orderId, status }) => {
+  async ({ orderId, status }, { getState }) => {
+    const token = getState().user.token;
     const { data } = await axios.put(
       `${URL}/orders/${orderId}/status`,
       { status },
-      getAuthConfig()
+      getAuthConfig(token)
     );
     return data;
   }

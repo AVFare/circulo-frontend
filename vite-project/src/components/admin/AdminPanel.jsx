@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Box, Typography, Drawer, List, ListItem, ListItemIcon, 
   ListItemText, IconButton, Divider, AppBar, Toolbar } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -16,17 +17,8 @@ const drawerWidth = 280;
 export default function AdminPanel() {
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [user, setUser] = useState(null);
+  const user = useSelector((state) => state.user.profile);
 
-  useEffect(() => {
-    // Recuperar datos de usuario del localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
-  // Si el usuario no es admin, no mostrar nada
   if (!user || user.role === 'user') {
     return null;
   }

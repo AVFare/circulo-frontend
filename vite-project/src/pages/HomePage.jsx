@@ -239,7 +239,7 @@ export default function HomePage() {
           <Paper elevation={2} sx={{ p: 2 }}>
             <Grid container spacing={2} alignItems="center">
               {/* Categoría */}
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Categoría</InputLabel>
                   <Select
@@ -266,7 +266,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Precio mínimo */}
-              <Grid item xs={6} sm={6} md={1.5}>
+              <Grid size={{ xs: 6, sm: 6, md: 1.5 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -283,7 +283,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Precio máximo */}
-              <Grid item xs={6} sm={6} md={1.5}>
+              <Grid size={{ xs: 6, sm: 6, md: 1.5 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -300,7 +300,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Ordenar */}
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Ordenar por</InputLabel>
                   <Select
@@ -318,7 +318,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Filtro de descuento */}
-              <Grid item xs={6} sm={6} md={1.5}>
+              <Grid size={{ xs: 6, sm: 6, md: 1.5 }}>
                 <Button
                   fullWidth
                   variant={showOnlyDiscounted ? "contained" : "outlined"}
@@ -336,7 +336,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Items por página */}
-              <Grid item xs={6} sm={3} md={1.5}>
+              <Grid size={{ xs: 6, sm: 3, md: 1.5 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Mostrar</InputLabel>
                   <Select
@@ -352,7 +352,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Limpiar */}
-              <Grid item xs={12} sm={12} md={1.5}>
+              <Grid size={{ xs: 12, sm: 12, md: 1.5 }}>
                 <Button
                   fullWidth
                   variant="outlined"
@@ -448,7 +448,7 @@ export default function HomePage() {
 
           {/* Error */}
           {error && (
-            <Alert severity="error" onClose={() => setError('')}>
+            <Alert severity="error">
               {error}
             </Alert>
           )}

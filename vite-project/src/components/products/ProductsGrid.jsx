@@ -28,8 +28,7 @@ export default function ProductsGrid({ products = [], viewMode = 'grid' }) {
       >
         {products.map((product) => (
           <Grid 
-            key={product.id} 
-            item
+            key={product.id}
             sx={{
               display: 'flex',
               justifyContent: 'center',

@@ -35,6 +35,7 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 export default function MyOrders() {
   const dispatch = useDispatch();
   const { items: orders, totalPages, totalElements, loading, error } = useSelector((state) => state.orders);
+  const token = useSelector((state) => state.user.token);
   
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -46,13 +47,12 @@ export default function MyOrders() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
     if (!token) {
       return;
     }
 
     dispatch(fetchOrders({ page, size: rowsPerPage }));
-  }, [dispatch, page, rowsPerPage]);
+  }, [dispatch, page, rowsPerPage, token]);
 
   const handleViewDetails = (order) => {
     setSelectedOrder(order);

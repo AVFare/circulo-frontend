@@ -14,8 +14,8 @@ axios.interceptors.response.use(
   }
 );
 
-const getAuthConfig = () => {
-  const token = localStorage.getItem('access_token');
+// Función auxiliar que obtendrá el token del state de Redux
+const getAuthConfig = (token) => {
   return {
     headers: {
       'Content-Type': 'application/json',
@@ -42,18 +42,20 @@ export const registerUser = createAsyncThunk(
 
 export const fetchProfile = createAsyncThunk(
   "user/fetchProfile",
-  async () => {
-    const { data } = await axios.get(`${USER_URL}/profile`, getAuthConfig());
+  async (_, { getState }) => {
+    const { user } = getState();
+    const { data } = await axios.get(`${USER_URL}/profile`, getAuthConfig(user.token));
     return data;
   }
 );
 
 export const fetchUsers = createAsyncThunk(
   "user/fetchUsers",
-  async ({ page = 0, size = 10, sortBy = 'username', sortDirection = 'asc' } = {}) => {
+  async ({ page = 0, size = 10, sortBy = 'username', sortDirection = 'asc' } = {}, { getState }) => {
+    const { user } = getState();
     const { data } = await axios.get(
       `${USER_URL}/users?page=${page}&size=${size}&sortBy=${sortBy}&sortDirection=${sortDirection}`,
-      getAuthConfig()
+      getAuthConfig(user.token)
     );
     return data;
   }
@@ -61,19 +63,21 @@ export const fetchUsers = createAsyncThunk(
 
 export const fetchUserById = createAsyncThunk(
   "user/fetchUserById",
-  async (userId) => {
-    const { data } = await axios.get(`${USER_URL}/users/${userId}`, getAuthConfig());
+  async (userId, { getState }) => {
+    const { user } = getState();
+    const { data } = await axios.get(`${USER_URL}/users/${userId}`, getAuthConfig(user.token));
     return data;
   }
 );
 
 export const updateUser = createAsyncThunk(
   "user/updateUser",
-  async ({ id, userData }) => {
+  async ({ id, userData }, { getState }) => {
+    const { user } = getState();
     const { data } = await axios.put(
       `${USER_URL}/users/update/${id}`,
       userData,
-      getAuthConfig()
+      getAuthConfig(user.token)
     );
     return data;
   }
@@ -81,12 +85,13 @@ export const updateUser = createAsyncThunk(
 
 export const changePassword = createAsyncThunk(
   "user/changePassword",
-  async (passwordData) => {
+  async (passwordData, { getState }) => {
+    const { user } = getState();
     const userId = passwordData.userId || passwordData.id;
     const { data } = await axios.put(
       `${USER_URL}/users/update/${userId}`,
       { password: passwordData.password },
-      getAuthConfig()
+      getAuthConfig(user.token)
     );
     return data;
   }
@@ -111,8 +116,6 @@ const userSlice = createSlice({
       state.isAuthenticated = false;
       state.profile = null;
       state.error = null;
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("access_token");
     },
     clearError: (state) => {
       state.error = null;
@@ -135,9 +138,6 @@ const userSlice = createSlice({
           id: action.payload.id,
           role: action.payload.role,
         };
-        // Persiste en localStorage
-        localStorage.setItem("access_token", action.payload.access_token);
-        localStorage.setItem("userInfo", JSON.stringify(state.profile));
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -157,9 +157,6 @@ const userSlice = createSlice({
           id: action.payload.id,
           role: action.payload.role,
         };
-        // Persiste en localStorage
-        localStorage.setItem("access_token", action.payload.access_token);
-        localStorage.setItem("userInfo", JSON.stringify(state.profile));
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -173,11 +170,7 @@ const userSlice = createSlice({
       })
       .addCase(fetchProfile.fulfilled, (state, action) => {
         state.loading = false;
-        // Actualiza el perfil con todos los datos del usuario
         state.profile = action.payload;
-        localStorage.setItem("userInfo", JSON.stringify({
-          ...state.profile
-        }));
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;

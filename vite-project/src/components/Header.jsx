@@ -4,7 +4,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RecyclingIcon from '@mui/icons-material/Recycling';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import UserMenu from './UserMenu';
 
 const Search = styled('div')(({ theme }) => ({
@@ -47,19 +48,12 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export default function Header({ onSearch }) {
-  const [user, setUser] = useState(null);
+  const user = useSelector((state) => state.user.profile);
+  const token = useSelector((state) => state.user.token);
   const [searchValue, setSearchValue] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/inicio';
-
-  useEffect(() => {
-    // Recuperar datos de usuario del localStorage
-    const userData = localStorage.getItem('userInfo');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
 
   const handleSearchChange = (e) => {
     setSearchValue(e.target.value);
@@ -146,7 +140,7 @@ export default function Header({ onSearch }) {
             </Search>
           </Box>
 
-          {localStorage.getItem('userInfo') && localStorage.getItem('access_token') ? (
+          {user && token ? (
             <UserMenu />
           ) : (
             <Box sx={{ ml: 2 }}>

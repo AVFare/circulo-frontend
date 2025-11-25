@@ -29,14 +29,13 @@ import ProductForm from "./admin/ProductForm";
 import ProductList from "./admin/ProductList";
 import UserList from "./admin/UserList";
 import OrderList from "./admin/OrderList";
-import { fetchProfile } from "../redux/userSlice";
+import { fetchProfile, logout } from "../redux/userSlice";
 
 export default function UserMenu() {
   const dispatch = useDispatch();
-  const { profile } = useSelector((state) => state.user);
+  const { profile, token } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [user, setUser] = useState(null);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [productListModalOpen, setProductListModalOpen] = useState(false);
   const [userListModalOpen, setUserListModalOpen] = useState(false);
@@ -49,25 +48,10 @@ export default function UserMenu() {
   const open = Boolean(anchorEl);
 
   useEffect(() => {
-    const userInfo = localStorage.getItem("userInfo");
-    if (userInfo) {
-      setUser(JSON.parse(userInfo));
-    }
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
     if (token && !profile) {
       dispatch(fetchProfile());
     }
-  }, [dispatch, profile]);
-
-  useEffect(() => {
-    if (profile) {
-      setUser((prev) => ({ ...prev, ...profile }));
-      localStorage.setItem("userInfo", JSON.stringify({ ...profile }));
-    }
-  }, [profile]);
+  }, [dispatch, profile, token]);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -93,8 +77,7 @@ export default function UserMenu() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("userInfo");
-    localStorage.removeItem("access_token");
+    dispatch(logout());
     navigate("/");
     handleClose();
   };
@@ -125,15 +108,15 @@ export default function UserMenu() {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  if (!user) return null;
+  if (!profile) return null;
 
   const firstName =
-    user.firstName || user.firstname || user.name?.split(" ")[0] || "";
+    profile?.firstName || profile?.firstname || profile?.name?.split(" ")[0] || "";
   const lastName =
-    user.lastName ||
-    user.lastname ||
-    (user.name?.split(" ").length > 1
-      ? user.name?.split(" ").slice(-1)[0]
+    profile?.lastName ||
+    profile?.lastname ||
+    (profile?.name?.split(" ").length > 1
+      ? profile?.name?.split(" ").slice(-1)[0]
       : "");
   const displayName = `${firstName} ${lastName}`.trim();
 
@@ -141,19 +124,16 @@ export default function UserMenu() {
     const firstInitial = firstName?.trim().charAt(0) || "";
     const lastInitial = lastName?.trim().charAt(0) || "";
     let initials = `${firstInitial}${lastInitial}`.toUpperCase().trim();
-    {
-      console.log("first inirial last initial", firstInitial,lastInitial, initials);
-    }
 
     if (!initials) {
-      return (user.email?.slice(0, 2) || "US").toUpperCase();
+      return (profile?.email?.slice(0, 2) || "US").toUpperCase();
     }
 
     if (initials.length === 1) {
       const fallback =
         firstName?.trim().charAt(1) ||
         lastName?.trim().charAt(1) ||
-        user.email?.charAt(1) ||
+        profile?.email?.charAt(1) ||
         "X";
       initials = `${initials}${fallback}`.slice(0, 2).toUpperCase();
     }
@@ -162,7 +142,7 @@ export default function UserMenu() {
   };
 
   const avatarInitials = getAvatarInitials();
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = profile?.role === "ADMIN";
 
   return (
     <>
@@ -226,10 +206,10 @@ export default function UserMenu() {
           </Avatar>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              {displayName || user.email}
+              {displayName || profile?.email}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {user.email}
+              {profile?.email}
             </Typography>
           </Box>
         </Box>
@@ -255,44 +235,42 @@ export default function UserMenu() {
           Cambiar Contraseña
         </MenuItem>
 
-        {isAdmin && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <Box sx={{ px: 2, pb: 1 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontWeight: 600 }}
-              >
-                Panel administrativo
-              </Typography>
-            </Box>
-            <MenuItem onClick={() => handleAdminAction("createProduct")}>
-              <ListItemIcon>
-                <InventoryIcon fontSize="small" />
-              </ListItemIcon>
-              Crear Producto
-            </MenuItem>
-            <MenuItem onClick={() => handleAdminAction("productList")}>
-              <ListItemIcon>
-                <ListAltIcon fontSize="small" />
-              </ListItemIcon>
-              Ver Productos
-            </MenuItem>
-            <MenuItem onClick={() => handleAdminAction("users")}>
-              <ListItemIcon>
-                <PeopleIcon fontSize="small" />
-              </ListItemIcon>
-              Usuarios
-            </MenuItem>
-            <MenuItem onClick={() => handleAdminAction("orders")}>
-              <ListItemIcon>
-                <ShoppingCartIcon fontSize="small" />
-              </ListItemIcon>
-              Órdenes
-            </MenuItem>
-          </>
-        )}
+        {isAdmin && [
+          <Divider key="divider-admin" sx={{ my: 1 }} />,
+          <Box key="box-admin-title" sx={{ px: 2, pb: 1 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
+            >
+              Panel administrativo
+            </Typography>
+          </Box>,
+          <MenuItem key="create-product" onClick={() => handleAdminAction("createProduct")}>
+            <ListItemIcon>
+              <InventoryIcon fontSize="small" />
+            </ListItemIcon>
+            Crear Producto
+          </MenuItem>,
+          <MenuItem key="product-list" onClick={() => handleAdminAction("productList")}>
+            <ListItemIcon>
+              <ListAltIcon fontSize="small" />
+            </ListItemIcon>
+            Ver Productos
+          </MenuItem>,
+          <MenuItem key="users" onClick={() => handleAdminAction("users")}>
+            <ListItemIcon>
+              <PeopleIcon fontSize="small" />
+            </ListItemIcon>
+            Usuarios
+          </MenuItem>,
+          <MenuItem key="orders" onClick={() => handleAdminAction("orders")}>
+            <ListItemIcon>
+              <ShoppingCartIcon fontSize="small" />
+            </ListItemIcon>
+            Órdenes
+          </MenuItem>
+        ]}
 
         <Divider sx={{ mt: 1 }} />
         <MenuItem onClick={handleLogout}>
