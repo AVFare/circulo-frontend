@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import {
   Box,
   Typography,
@@ -31,18 +30,18 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import ProductForm from "./ProductForm";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAdminProducts, deleteProduct } from "../../redux/productSlice";
 
 export default function ProductList({ onCloseDrawer }) {
   const navigate = useNavigate();
   const token = useSelector((state) => state.user.token);
   
-  const [productList, setProductList] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [totalElements, setTotalElements] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
@@ -51,25 +50,13 @@ export default function ProductList({ onCloseDrawer }) {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
+  const dispatch = useDispatch();
+  const { adminItems: productList } = useSelector((state) => state.products);
+
   useEffect(() => {
-    // Panel de admin: usa el endpoint que devuelve TODOS los productos (sin filtrar por status)
-    fetch("http://localhost:4002/api/item/catalog/products", {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Error al cargar productos");
-        return response.json();
-      })
-      .then((data) => {
-        // Como este endpoint no está paginado, manejamos la paginación en el frontend
-        setProductList(data);
-        setTotalElements(data.length);
-      })
-      .catch((error) => {
-        console.error("Error al cargar productos:", error);
-      });
-  }, [refreshTrigger]);
+    dispatch(fetchAdminProducts());
+  }, [dispatch]);
+
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -87,37 +74,23 @@ export default function ProductList({ onCloseDrawer }) {
 
   const handleConfirmDelete = async () => {
     try {
-      // Soft delete: cambiar estado a DELETED
-      const response = await fetch(
-        `http://localhost:4002/api/item/products/${productToDelete}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: 2 }), // 2 = DELETED
-        }
-      );
+      await dispatch(deleteProduct({ id: productToDelete })).unwrap();
 
-      if (!response.ok) {
-        throw new Error("Error al eliminar producto");
-      }
-
-      // Recargar la lista
-      setRefreshTrigger((prev) => prev + 1);
-      // Mostrar dialog de éxito en lugar de snackbar
       setSuccessDialogOpen(true);
     } catch (error) {
       console.error("Error al eliminar producto:", error);
-      setSnackbarMessage("Error al eliminar el producto: " + error.message);
+      setSnackbarMessage("Error al eliminar el producto: " + error);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     } finally {
       setDeleteDialogOpen(false);
       setProductToDelete(null);
+
+      // refrescar lista
+      dispatch(fetchAdminProducts());
     }
   };
+
 
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false);
@@ -142,13 +115,12 @@ export default function ProductList({ onCloseDrawer }) {
     setCreateModalOpen(false);
   };
 
-  const handleProductSubmit = (productData) => {
-    console.log("Producto guardado:", productData);
-    // Recargar la lista de productos
-    setRefreshTrigger((prev) => prev + 1);
+  const handleProductSubmit = () => {
+    dispatch(fetchAdminProducts());
     handleCloseEditModal();
     handleCloseCreateModal();
   };
+
 
   return (
     <Box>
@@ -275,10 +247,10 @@ export default function ProductList({ onCloseDrawer }) {
                 <IconButton
                   onClick={() =>
                     setPage(
-                      Math.max(0, Math.ceil(totalElements / rowsPerPage) - 1)
+                      Math.max(0, Math.ceil(productList.length / rowsPerPage) - 1)
                     )
                   }
-                  disabled={page >= Math.ceil(totalElements / rowsPerPage) - 1}
+                  disabled={page >= Math.ceil(productList.length / rowsPerPage) - 1}
                   size="small"
                 >
                   <LastPageIcon />
@@ -288,7 +260,7 @@ export default function ProductList({ onCloseDrawer }) {
           </Box>
           <TablePagination
             component="div"
-            count={totalElements}
+            count={productList.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}

@@ -64,6 +64,23 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
+export const checkProductStock = createAsyncThunk(
+  "products/checkProductStock",
+  async ({ id, token }) => {
+    const { data } = await axios.get(
+      `${CATALOG_URL}/${id}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      }
+    );
+    return data; 
+  }
+);
+
+
 export const fetchAdminProducts = createAsyncThunk(
   "products/fetchAdminProducts",
   async (_, { getState }) => {
