@@ -22,7 +22,8 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import PercentIcon from "@mui/icons-material/Percent";
 import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
-import { createProduct, updateProduct } from "../../redux/productSlice";
+import { createProduct, updateProduct, triggerRefresh } from "../../redux/productSlice";
+
 
 const categories = [
   { id: 0, name: "REMERAS" },
@@ -166,6 +167,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       await dispatch(updateProduct({ id: product.id, productData: itemDto }));
     } else {
       await dispatch(createProduct(itemDto));
+      dispatch(triggerRefresh());
     }
 
     setSuccessMessage(

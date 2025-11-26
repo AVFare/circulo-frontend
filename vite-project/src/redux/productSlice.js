@@ -118,6 +118,7 @@ const productSlice = createSlice({
     totalElements: 0,
     loading: false,
     error: null,
+    shouldRefresh: false,
   },
   reducers: {
     clearError: (state) => {
@@ -125,6 +126,12 @@ const productSlice = createSlice({
     },
     clearCurrentProduct: (state) => {
       state.currentProduct = null;
+    },
+    triggerRefresh(state) {
+      state.shouldRefresh = true;
+    },
+    clearRefresh(state) {
+      state.shouldRefresh = false;
     },
   },
   extraReducers: (builder) => {
@@ -255,4 +262,5 @@ const productSlice = createSlice({
 });
 
 export const { clearError, clearCurrentProduct } = productSlice.actions;
+export const { triggerRefresh, clearRefresh } = productSlice.actions;
 export default productSlice.reducer;
