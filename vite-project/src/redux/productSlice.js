@@ -64,6 +64,23 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
+export const checkProductStock = createAsyncThunk(
+  "products/checkProductStock",
+  async ({ id, token }) => {
+    const { data } = await axios.get(
+      `${CATALOG_URL}/${id}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      }
+    );
+    return data; 
+  }
+);
+
+
 export const fetchAdminProducts = createAsyncThunk(
   "products/fetchAdminProducts",
   async (_, { getState }) => {
@@ -261,6 +278,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { clearError, clearCurrentProduct } = productSlice.actions;
-export const { triggerRefresh, clearRefresh } = productSlice.actions;
+export const { clearError, clearCurrentProduct, triggerRefresh, clearRefresh } = productSlice.actions;
 export default productSlice.reducer;

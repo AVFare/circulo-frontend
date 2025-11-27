@@ -18,6 +18,8 @@ import { useState } from 'react';
 import CheckoutFlow from '../payments/CheckoutFlow';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCartItems, selectCartTotal, removeFromCart, changeQty, clearCart } from '../../redux/cartSlice';
+import { checkProductStock } from "../../redux/productSlice";
+
 
 export default function CartDrawer({ open, onClose }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -59,19 +61,18 @@ export default function CartDrawer({ open, onClose }) {
   };
 
   const handleCheckout = async () => {
-    setStockError(null);
-    let errorItems = [];
-    for (const item of items) {
-      try {
-        const res = await fetch(`http://localhost:4002/api/item/catalog/products/${item.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error('No se pudo obtener el producto');
-        const prod = await res.json();
+  setStockError(null);
+  let errorItems = [];
+
+  for (const item of items) {
+    try {
+      const action = await dispatch(
+        checkProductStock({ id: item.id, token })
+      );
+
+      if (checkProductStock.fulfilled.match(action)) {
+        const prod = action.payload;
+
         if (item.qty > prod.stock) {
           errorItems.push({
             name: item.name,
@@ -79,20 +80,30 @@ export default function CartDrawer({ open, onClose }) {
             available: prod.stock
           });
         }
-      } catch (err) {
+      } else {
         errorItems.push({
           name: item.name,
           requested: item.qty,
-          available: 'error'
+          available: "error"
         });
       }
+    } catch (err) {
+      errorItems.push({
+        name: item.name,
+        requested: item.qty,
+        available: "error"
+      });
     }
-    if (errorItems.length > 0) {
-      setStockError(errorItems);
-      return;
-    }
-    setCheckoutOpen(true);
-  };
+  }
+
+  if (errorItems.length > 0) {
+    setStockError(errorItems);
+    return;
+  }
+
+  setCheckoutOpen(true);
+};
+
 
   const handleOrderComplete = (orderData) => {
     console.log('Orden completada:', orderData);

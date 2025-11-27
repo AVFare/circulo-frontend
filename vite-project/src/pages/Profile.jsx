@@ -25,10 +25,11 @@ export default function Profile() {
   useEffect(() => {
     document.title = 'Mi Perfil - CÍRCULO';
     
-    if (token) {
+    // Solo hacer fetch si hay token y no hay perfil cargado
+    if (token && !profile) {
       dispatch(fetchProfile());
     }
-  }, [dispatch, token]);
+  }, [dispatch, token, profile]);
 
   if (loading) {
     return (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { changePassword } from "../redux/userSlice";
 import {
   Box,
   Button,
@@ -18,6 +19,7 @@ import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function PasswordChange() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const token = useSelector((state) => state.user.token);
   const userInfo = useSelector((state) => state.user.profile);
   
@@ -66,7 +68,7 @@ export default function PasswordChange() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess(false);
@@ -85,42 +87,27 @@ export default function PasswordChange() {
 
     setLoading(true);
 
-    const datosAEnviar = {
-      password: form.password,
-    };
+    try {
+      const resultAction = await dispatch(changePassword({
+        userId: id,
+        password: form.password,
+      }));
 
-    const options = {
-      method: "PUT", // ajustar a PATCH si el backend espera PATCH
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(datosAEnviar),
-    };
-
-    const URL = `http://localhost:4002/api/user/users/update/${id}`;
-
-    fetch(URL, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Error al cambiar la contraseña");
-        }
-        return response.text(); // el backend responde 200 sin cuerpo; leer texto para no fallar
-      })
-      .then(() => {
+      if (changePassword.fulfilled.match(resultAction)) {
         setSuccess(true);
-        // redirigir o notificar; por ahora redirijo al inicio después de un breve delay
+        // redirigir al inicio después de un breve delay
         setTimeout(() => {
           navigate("/inicio");
         }, 900);
-      })
-      .catch((error) => {
-        console.error("Error al cambiar contraseña: ", error);
-        setError("Error al cambiar la contraseña. Intenta nuevamente.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      } else {
+        throw new Error(resultAction.error?.message || "Error al cambiar la contraseña");
+      }
+    } catch (error) {
+      console.error("Error al cambiar contraseña: ", error);
+      setError("Error al cambiar la contraseña. Intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
