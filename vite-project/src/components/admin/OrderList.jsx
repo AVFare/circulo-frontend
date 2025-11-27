@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOrders } from '../../redux/orderSlice';
+import { fetchOrders, updateOrderStatus } from '../../redux/orderSlice';
+import { fetchUserById } from '../../redux/userSlice';
 import {
   Box,
   Typography,
@@ -51,27 +52,22 @@ export default function OrderList() {
     dispatch(fetchOrders({ page, size: rowsPerPage }));
   }, [dispatch, page, rowsPerPage]);
 
-  const fetchUserDetails = (userId) => {
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    };
-
+  const fetchUserDetails = async (userId) => {
     setLoadingUser(true);
-    fetch(`http://localhost:4002/api/user/users/${userId}`, options)
-      .then((response) => response.json())
-      .then((user) => {
-        setSelectedUser(user);
-        setLoadingUser(false);
-      })
-      .catch((error) => {
-        console.error('Error al obtener usuario:', error);
+    try {
+      const resultAction = await dispatch(fetchUserById(userId));
+      
+      if (fetchUserById.fulfilled.match(resultAction)) {
+        setSelectedUser(resultAction.payload);
+      } else {
         setSelectedUser(null);
-        setLoadingUser(false);
-      });
+      }
+    } catch (error) {
+      console.error('Error al obtener usuario:', error);
+      setSelectedUser(null);
+    } finally {
+      setLoadingUser(false);
+    }
   };
 
   const handleViewDetails = (order) => {
@@ -90,46 +86,28 @@ export default function OrderList() {
     setSelectedUser(null);
   };
 
-  const handleStatusChange = (orderId, newStatus) => {
+  const handleStatusChange = async (orderId, newStatus) => {
     if (!token) {
       alert('No se encontró token de autenticación');
       return;
     }
 
-    const datosAEnviar = {
-      orderStatus: newStatus
-    };
-
-    const options = {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(datosAEnviar),
-    };
-
-    const URL = `http://localhost:4002/api/action/orders/${orderId}/status`;
-
-    fetch(URL, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Error al actualizar el estado');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        // Actualizar la orden en la lista local
-        setOrderList(prevOrders =>
-          prevOrders.map(order =>
-            order.id === orderId ? { ...order, orderStatus: data.orderStatus } : order
-          )
-        );
-      })
-      .catch((error) => {
-        console.error('Error al actualizar estado:', error);
-        alert('Error al actualizar el estado de la orden');
-      });
+    try {
+      const resultAction = await dispatch(updateOrderStatus({ 
+        orderId, 
+        status: newStatus 
+      }));
+      
+      if (updateOrderStatus.fulfilled.match(resultAction)) {
+        // Recargar la lista de órdenes para reflejar los cambios
+        dispatch(fetchOrders({ page, size: rowsPerPage }));
+      } else {
+        throw new Error(resultAction.error?.message || 'Error al actualizar el estado');
+      }
+    } catch (error) {
+      console.error('Error al actualizar estado:', error);
+      alert('Error al actualizar el estado de la orden');
+    }
   };
 
   const getStatusColor = (status) => {

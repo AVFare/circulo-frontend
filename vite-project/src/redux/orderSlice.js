@@ -55,7 +55,7 @@ export const updateOrderStatus = createAsyncThunk(
     const token = getState().user.token;
     const { data } = await axios.put(
       `${URL}/orders/${orderId}/status`,
-      { status },
+      { orderStatus: status },
       getAuthConfig(token)
     );
     return data;

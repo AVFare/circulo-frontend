@@ -18,6 +18,7 @@ import { useState } from 'react';
 import CheckoutFlow from '../payments/CheckoutFlow';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCartItems, selectCartTotal, removeFromCart, changeQty, clearCart } from '../../redux/cartSlice';
+import { fetchProductById } from '../../redux/productSlice';
 
 export default function CartDrawer({ open, onClose }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -63,21 +64,19 @@ export default function CartDrawer({ open, onClose }) {
     let errorItems = [];
     for (const item of items) {
       try {
-        const res = await fetch(`http://localhost:4002/api/item/catalog/products/${item.id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error('No se pudo obtener el producto');
-        const prod = await res.json();
-        if (item.qty > prod.stock) {
-          errorItems.push({
-            name: item.name,
-            requested: item.qty,
-            available: prod.stock
-          });
+        const resultAction = await dispatch(fetchProductById(item.id));
+        
+        if (fetchProductById.fulfilled.match(resultAction)) {
+          const prod = resultAction.payload;
+          if (item.qty > prod.stock) {
+            errorItems.push({
+              name: item.name,
+              requested: item.qty,
+              available: prod.stock
+            });
+          }
+        } else {
+          throw new Error('No se pudo obtener el producto');
         }
       } catch (err) {
         errorItems.push({

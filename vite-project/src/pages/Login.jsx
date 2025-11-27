@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, clearError } from "../redux/userSlice";
+import { loginUser, fetchProfile, clearError } from "../redux/userSlice";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Login() {
@@ -37,6 +37,7 @@ export default function Login() {
     e.preventDefault();
     const result = await dispatch(loginUser(form));
     if (loginUser.fulfilled.match(result)) {
+      await dispatch(fetchProfile());
       navigate("/inicio");
     }
   };

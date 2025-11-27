@@ -261,6 +261,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { clearError, clearCurrentProduct } = productSlice.actions;
-export const { triggerRefresh, clearRefresh } = productSlice.actions;
+export const { clearError, clearCurrentProduct, triggerRefresh, clearRefresh } = productSlice.actions;
 export default productSlice.reducer;

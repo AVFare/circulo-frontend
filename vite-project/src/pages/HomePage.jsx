@@ -82,28 +82,33 @@ export default function HomePage() {
     }
   }, [searchParams]);
 
-  // Fetch productos con filtros
+  // Fetch productos con filtros - con debounce para searchTerm
   useEffect(() => {
     // Si hay errores en los filtros de precio, no hacemos la petición
     if (minPriceError || maxPriceError) {
       return;
     }
 
-    const filters = {
-      page: currentPage,
-      size: pageSize,
-      sortBy,
-      sortDirection,
-      inStock: true,
-    };
-    
-    if (searchTerm) filters.name = searchTerm;
-    if (selectedCategory) filters.category = selectedCategory;
-    if (minPrice) filters.minPrice = minPrice;
-    if (maxPrice) filters.maxPrice = maxPrice;
-    if (showOnlyDiscounted) filters.hasDiscount = true;
+    // Debounce para el searchTerm: esperar 500ms después de que el usuario deje de escribir
+    const timeoutId = setTimeout(() => {
+      const filters = {
+        page: currentPage,
+        size: pageSize,
+        sortBy,
+        sortDirection,
+        inStock: true,
+      };
+      
+      if (searchTerm) filters.name = searchTerm;
+      if (selectedCategory) filters.category = selectedCategory;
+      if (minPrice) filters.minPrice = minPrice;
+      if (maxPrice) filters.maxPrice = maxPrice;
+      if (showOnlyDiscounted) filters.hasDiscount = true;
 
-    dispatch(fetchProducts(filters));
+      dispatch(fetchProducts(filters));
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [dispatch, currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted, minPriceError, maxPriceError]);
 
   useEffect(() => {

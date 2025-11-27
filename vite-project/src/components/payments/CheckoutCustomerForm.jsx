@@ -4,7 +4,7 @@ import { Box, TextField, Button, Typography, Grid, FormHelperText } from '@mui/m
 
 export default function CheckoutCustomerForm({ initialData = {}, onSubmit }) {
   // Profile from redux (may be null if not loaded)
-  const profile = useSelector((state) => state.users?.profile || {});
+  const profile = useSelector((state) => state.user?.profile || {});
 
   // Build initial form data (only editable fields live here)
   const initialForm = {

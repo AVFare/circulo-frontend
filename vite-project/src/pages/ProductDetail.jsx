@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProductById, clearCurrentProduct } from "../redux/productSlice";
+import { fetchProductById, clearCurrentProduct, deleteProduct } from "../redux/productSlice";
 import {
   Box,
   Container,
@@ -115,21 +115,7 @@ export default function ProductDetail() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:4002/api/item/products/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: 2 }), // 2 = DELETED
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar producto");
-      }
+      await dispatch(deleteProduct({ id: parseInt(id), status: 2 })).unwrap();
 
       setDeleteDialogOpen(false);
       setSuccessDialogOpen(true);

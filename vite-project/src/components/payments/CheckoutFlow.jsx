@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Dialog, 
   DialogTitle, 
@@ -15,10 +15,12 @@ import CheckoutStepper from './CheckoutStepper';
 import CheckoutCustomerForm from './CheckoutCustomerForm';
 import PaymentMethodSelector from './PaymentMethodSelector';
 import PaymentSummary from './PaymentSummary';
+import { createOrder } from '../../redux/orderSlice';
 
 const STEPS = ['Datos personales', 'Método de pago', 'Confirmación'];
 
 export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
+  const dispatch = useDispatch();
   const token = useSelector((state) => state.user.token);
   const userInfo = useSelector((state) => state.user.profile);
   
@@ -55,7 +57,7 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
     handleNext();
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!token || !userInfo?.id) {
       console.error('No se encontró token o ID de usuario');
       alert('Error: No hay sesión activa. Por favor inicia sesión.');
@@ -69,7 +71,7 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
     };
 
     // Construir el objeto de orden según la documentación del backend
-    const datosAEnviar = {
+    const orderData = {
       user: { id: userInfo.id },
       items: cart.map(item => ({
         item: { id: item.id },
@@ -83,39 +85,26 @@ export default function CheckoutFlow({ open, onClose, cart, onOrderComplete }) {
       paymentMethod: paymentMethodMap[paymentData.method] || 'MERCADOPAGO'
     };
 
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(datosAEnviar),
-    };
-
-    const URL = "http://localhost:4002/api/action/orders";
-
-    fetch(URL, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Error al crear la orden');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log('Orden creada exitosamente:', data);
+    try {
+      const resultAction = await dispatch(createOrder(orderData));
+      
+      if (createOrder.fulfilled.match(resultAction)) {
+        console.log('Orden creada exitosamente:', resultAction.payload);
         // Llamar al callback con los datos completos
         onOrderComplete({
           customer: customerData,
           payment: paymentData,
           cart,
-          orderData: data
+          orderData: resultAction.payload
         });
         onClose();
-      })
-      .catch((error) => {
-        console.error("Error al crear la orden: ", error);
-        alert('Error al procesar la orden. Por favor intenta nuevamente.');
-      });
+      } else {
+        throw new Error(resultAction.error?.message || 'Error al crear la orden');
+      }
+    } catch (error) {
+      console.error("Error al crear la orden: ", error);
+      alert('Error al procesar la orden. Por favor intenta nuevamente.');
+    }
   };
 
   return (

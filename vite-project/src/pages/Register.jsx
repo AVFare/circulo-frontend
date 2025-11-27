@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser, clearError } from "../redux/userSlice";
+import { registerUser, fetchProfile, clearError } from "../redux/userSlice";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Register() {
@@ -44,6 +44,7 @@ export default function Register() {
     e.preventDefault();
     const result = await dispatch(registerUser(form));
     if (registerUser.fulfilled.match(result)) {
+      await dispatch(fetchProfile());
       navigate("/inicio");
     }
   };

@@ -165,6 +165,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
 
     if (isEditMode) {
       await dispatch(updateProduct({ id: product.id, productData: itemDto }));
+      dispatch(triggerRefresh());
     } else {
       await dispatch(createProduct(itemDto));
       dispatch(triggerRefresh());
