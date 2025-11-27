@@ -1,8 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// cartSlice: maneja el estado del carrito en memoria (Redux only).
-// No persiste en localStorage ni llama al backend según lo solicitado.
-
 const initialState = {
 	items: [], // cada item: { id, name, price, discount, qty, imageData, stock, ... }
 };
@@ -11,12 +8,12 @@ const cartSlice = createSlice({
 	name: 'cart',
 	initialState,
 	reducers: {
-		// Añade un producto al carrito. Si ya existe, aumenta la cantidad.
+		// Agrega un producto al carrito. Si ya existe, aumenta la cantidad
 		addToCart: (state, action) => {
 			const incoming = action.payload;
 			const idx = state.items.findIndex(i => i.id === incoming.id);
 			if (idx !== -1) {
-				// Si viene qty explícita, la sumamos; en caso contrario sumamos 1
+				// Si viene qty explícita, la sumamos. En caso contrario sumamos 1
 				const addQty = typeof incoming.qty === 'number' ? incoming.qty : 1;
 				state.items[idx].qty = (state.items[idx].qty || 0) + addQty;
 			} else {
@@ -30,7 +27,7 @@ const cartSlice = createSlice({
 			state.items = state.items.filter(i => i.id !== id);
 		},
 
-		// Cambiar cantidad (replace). Si qty <= 0 se elimina.
+		// Cambiar cantidad con replace. Si qty <= 0 se elimina.
 		changeQty: (state, action) => {
 			const { id, qty } = action.payload;
 			const idx = state.items.findIndex(i => i.id === id);
@@ -48,7 +45,7 @@ const cartSlice = createSlice({
 			state.items = [];
 		},
 
-		// Reemplazar todo el carrito (útil para pruebas o sincronizaciones internas)
+		// Reemplazar todo el carrito puede ser útil para pruebas del admin
 		setCartItems: (state, action) => {
 			state.items = Array.isArray(action.payload) ? action.payload : [];
 		},
