@@ -98,7 +98,7 @@ export const changePassword = createAsyncThunk(
   "user/changePassword",
   async (passwordData, { getState }) => {
     const { user } = getState();
-    const userId = passwordData.userId || passwordData.id;
+    const userId = passwordData.userId;
     const { data } = await axios.put(
       `${USER_URL}/users/update/${userId}`,
       { password: passwordData.password },
