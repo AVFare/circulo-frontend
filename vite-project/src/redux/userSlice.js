@@ -1,9 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const AUTH_URL = "http://localhost:4002/api/v1/auth";
-const USER_URL = "http://localhost:4002/api/user";
+// urls del backend
+const BASE_URL = "http://localhost:4002/api";
+const AUTH_URL = `${BASE_URL}/v1/auth`;
+const USER_URL = `${BASE_URL}/user`;
 
+// interceptor para manejar errores del backend
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -14,7 +17,7 @@ axios.interceptors.response.use(
   }
 );
 
-// Función auxiliar que obtendrá el token del state de Redux
+// arma los headers con el token para las peticiones autenticadas
 const getAuthConfig = (token) => {
   return {
     headers: {
@@ -24,6 +27,7 @@ const getAuthConfig = (token) => {
   };
 };
 
+// thunk para iniciar sesión
 export const loginUser = createAsyncThunk(
   "user/loginUser",
   async (credentials) => {
@@ -32,6 +36,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+// thunk para registrar un nuevo usuario
 export const registerUser = createAsyncThunk(
   "user/registerUser",
   async (userData) => {
@@ -40,6 +45,7 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+// thunk para traer el perfil del usuario logueado
 export const fetchProfile = createAsyncThunk(
   "user/fetchProfile",
   async (_, { getState }) => {
@@ -49,6 +55,7 @@ export const fetchProfile = createAsyncThunk(
   }
 );
 
+// thunk para traer la lista de usuarios (admin)
 export const fetchUsers = createAsyncThunk(
   "user/fetchUsers",
   async ({ page = 0, size = 10, sortBy = 'username', sortDirection = 'asc' } = {}, { getState }) => {
@@ -61,6 +68,7 @@ export const fetchUsers = createAsyncThunk(
   }
 );
 
+// thunk para traer un usuario específico por id
 export const fetchUserById = createAsyncThunk(
   "user/fetchUserById",
   async (userId, { getState }) => {
@@ -70,6 +78,7 @@ export const fetchUserById = createAsyncThunk(
   }
 );
 
+// thunk para actualizar datos de un usuario
 export const updateUser = createAsyncThunk(
   "user/updateUser",
   async ({ id, userData }, { getState }) => {
@@ -83,6 +92,8 @@ export const updateUser = createAsyncThunk(
   }
 );
 
+// thunk para cambiar la contraseña de un usuario
+// usa el mismo endpoint de update pero solo manda el campo password
 export const changePassword = createAsyncThunk(
   "user/changePassword",
   async (passwordData, { getState }) => {
@@ -100,32 +111,36 @@ export const changePassword = createAsyncThunk(
 const userSlice = createSlice({
   name: "user",
   initialState: {
-    token: null,
-    isAuthenticated: false,
-    profile: null,
-    users: [],
-    totalPages: 0,
-    totalElements: 0,
-    currentUser: null,
-    loading: false,
-    error: null,
+    token: null,                  // jwt del usuario logueado
+    isAuthenticated: false,       // flag de si está logueado
+    profile: null,                // info del usuario actual
+    users: [],                    // lista de todos los usuarios (admin)
+    totalPages: 0,                // paginación
+    totalElements: 0,             // total de usuarios
+    currentUser: null,            // usuario seleccionado (para ver detalles)
+    loading: false,               // si está cargando algo
+    error: null,                  // mensaje de error si algo falla
   },
   reducers: {
+    // cerrar sesión y limpiar todo
     logout: (state) => {
       state.token = null;
       state.isAuthenticated = false;
       state.profile = null;
       state.error = null;
     },
+    // limpiar el error para poder volver a intentar
     clearError: (state) => {
       state.error = null;
     },
+    // limpiar el usuario seleccionado
     clearCurrentUser: (state) => {
       state.currentUser = null;
     },
   },
   extraReducers: (builder) => {
     builder
+      // login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -144,7 +159,7 @@ const userSlice = createSlice({
         state.error = action.error.message;
       })
       
-      // ========== REGISTER ==========
+      // registro
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -163,7 +178,7 @@ const userSlice = createSlice({
         state.error = action.error.message;
       })
       
-      // ========== FETCH PROFILE ==========
+      // traer perfil completo del usuario
       .addCase(fetchProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -177,14 +192,13 @@ const userSlice = createSlice({
         state.error = action.error.message;
       })
       
-      // ========== FETCH USERS ==========
+      // traer lista de usuarios (admin)
       .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        // Guarda la respuesta paginada del backend
         state.users = action.payload.content || action.payload;
         state.totalPages = action.payload.totalPages || 0;
         state.totalElements = action.payload.totalElements || 0;
@@ -194,14 +208,13 @@ const userSlice = createSlice({
         state.error = action.error.message;
       })
       
-      // ========== FETCH USER BY ID ==========
+      // traer usuario por id
       .addCase(fetchUserById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchUserById.fulfilled, (state, action) => {
         state.loading = false;
-        // Guarda el usuario seleccionado
         state.currentUser = action.payload;
       })
       .addCase(fetchUserById.rejected, (state, action) => {
@@ -209,14 +222,14 @@ const userSlice = createSlice({
         state.error = action.error.message;
       })
       
-      // ========== UPDATE USER ==========
+      // actualizar usuario
       .addCase(updateUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         state.loading = false;
-        // Actualiza el usuario en el array de usuarios
+        // busca el usuario en la lista y lo actualiza
         const index = state.users.findIndex((user) => user.id === action.payload.id);
         if (index !== -1) {
           state.users[index] = action.payload;
@@ -226,6 +239,8 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
+      
+      // cambiar contraseña
       .addCase(changePassword.pending, (state) => {
         state.loading = true;
         state.error = null;
