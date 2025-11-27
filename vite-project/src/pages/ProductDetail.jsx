@@ -114,21 +114,25 @@ export default function ProductDetail() {
   };
 
   const handleDelete = async () => {
-    try {
-      await dispatch(deleteProduct({ id: parseInt(id), status: 2 })).unwrap();
+  try {
+    const resultAction = await dispatch(deleteProduct({ id }));
 
-      setDeleteDialogOpen(false);
-      setSuccessDialogOpen(true);
-      // cerrar y navegar luego de mostrar el dialog
-      setTimeout(() => {
-        setSuccessDialogOpen(false);
-        navigate("/inicio");
-      }, 900);
-    } catch (error) {
-      console.error("Error al eliminar producto:", error);
-      alert("Error al eliminar el producto: " + error.message);
+    if (deleteProduct.rejected.match(resultAction)) {
+      throw new Error(resultAction.error.message || "Error al eliminar producto");
     }
-  };
+
+    setDeleteDialogOpen(false);
+    setSuccessDialogOpen(true);
+
+    setTimeout(() => {
+      setSuccessDialogOpen(false);
+      navigate("/inicio");
+    }, 900);
+  } catch (error) {
+    console.error("Error al eliminar producto:", error);
+    alert("Error al eliminar el producto: " + error.message);
+  }
+};
 
   const openDeleteDialog = () => setDeleteDialogOpen(true);
   const closeDeleteDialog = () => setDeleteDialogOpen(false);

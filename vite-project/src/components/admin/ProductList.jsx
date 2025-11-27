@@ -32,6 +32,8 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import ProductForm from "./ProductForm";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAdminProducts, deleteProduct } from "../../redux/productSlice";
 
 export default function ProductList({ onCloseDrawer }) {
   const navigate = useNavigate();
@@ -44,12 +46,16 @@ export default function ProductList({ onCloseDrawer }) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+
+  const dispatch = useDispatch();
+  const { adminItems: productList } = useSelector((state) => state.products);
 
   useEffect(() => {
     dispatch(fetchAdminProducts());
@@ -72,7 +78,7 @@ export default function ProductList({ onCloseDrawer }) {
   const handleConfirmDelete = async () => {
     try {
       // Soft delete: cambiar estado a DELETED usando Redux
-      await dispatch(deleteProduct({ id: productToDelete, status: 2 })).unwrap();
+      await dispatch(deleteProduct({ id: productToDelete})).unwrap();
 
       // Trigger refresh para actualizar el catálogo público
       dispatch(triggerRefresh());
@@ -80,14 +86,18 @@ export default function ProductList({ onCloseDrawer }) {
       setSuccessDialogOpen(true);
     } catch (error) {
       console.error("Error al eliminar producto:", error);
-      setSnackbarMessage("Error al eliminar el producto: " + error.message);
+      setSnackbarMessage("Error al eliminar el producto: " + error);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     } finally {
       setDeleteDialogOpen(false);
       setProductToDelete(null);
+
+      // refrescar lista
+      dispatch(fetchAdminProducts());
     }
   };
+
 
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false);
@@ -112,12 +122,12 @@ export default function ProductList({ onCloseDrawer }) {
     setCreateModalOpen(false);
   };
 
-  const handleProductSubmit = (productData) => {
-    console.log("Producto guardado:", productData);
-    // Cerrar modales
+  const handleProductSubmit = () => {
+    dispatch(fetchAdminProducts());
     handleCloseEditModal();
     handleCloseCreateModal();
   };
+
 
   return (
     <Box>
@@ -247,6 +257,7 @@ export default function ProductList({ onCloseDrawer }) {
                       Math.max(0, Math.ceil(productList.length / rowsPerPage) - 1)
                     )
                   }
+                  disabled={page >= Math.ceil(productList.length / rowsPerPage) - 1}
                   disabled={page >= Math.ceil(productList.length / rowsPerPage) - 1}
                   size="small"
                 >
