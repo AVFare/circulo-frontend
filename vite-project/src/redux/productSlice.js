@@ -136,7 +136,7 @@ const productSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ========== FETCH PRODUCTS ==========
+      // fetch all (todos los productos)
       .addCase(fetchProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -159,7 +159,7 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // ========== FETCH PRODUCT BY ID ==========
+      // fetch product by id
       .addCase(fetchProductById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -173,7 +173,7 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // ========== FETCH ADMIN PRODUCTS ==========
+      // fetch admin
       .addCase(fetchAdminProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -187,7 +187,7 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // ========== CREATE PRODUCT ==========
+      // aca creamos
       .addCase(createProduct.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -201,7 +201,7 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // ========== UPDATE PRODUCT ==========
+      // aca actualiza(update)
       .addCase(updateProduct.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -225,7 +225,7 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // ========== DELETE PRODUCT ==========
+      // borrar - delete
       .addCase(deleteProduct.pending, (state) => {
         state.loading = true;
         state.error = null;
