@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts } from '../redux/productSlice';
 import { 
   Box, 
   Container, 
@@ -26,6 +28,7 @@ import GridViewIcon from '@mui/icons-material/GridView';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ProductsGrid from '../components/products/ProductsGrid.jsx';
+import { clearRefresh } from "../redux/productSlice";
 
 const CATEGORIES = [
   'REMERAS',
@@ -42,7 +45,10 @@ const PAGE_SIZE_OPTIONS = [12, 24, 48, 96];
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addToCart } = useOutletContext();
-  
+  const dispatch = useDispatch();
+  const { items: products, totalPages, totalElements, loading, error } = useSelector((state) => state.products);
+  const shouldRefresh = useSelector((state) => state.products.shouldRefresh);
+
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -57,12 +63,9 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
   
-  // Estados de datos
-  const [products, setProducts] = useState([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // Estados de validación para precios
+  const [minPriceError, setMinPriceError] = useState('');
+  const [maxPriceError, setMaxPriceError] = useState('');
 
   // Establecer título de la página
   useEffect(() => {
@@ -79,47 +82,56 @@ export default function HomePage() {
     }
   }, [searchParams]);
 
-  // Fetch productos con filtros
+  // Fetch productos con filtros - con debounce para searchTerm
   useEffect(() => {
-    setLoading(true);
-    setError('');
+    // Si hay errores en los filtros de precio, no hacemos la petición
+    if (minPriceError || maxPriceError) {
+      return;
+    }
 
-    const params = new URLSearchParams();
-    params.append('page', currentPage);
-    params.append('size', pageSize);
-    params.append('sortBy', sortBy);
-    params.append('sortDirection', sortDirection);
-    
-    if (searchTerm) params.append('name', searchTerm);
-    if (selectedCategory) params.append('category', selectedCategory);
-    if (minPrice) params.append('minPrice', minPrice);
-    if (maxPrice) params.append('maxPrice', maxPrice);
-    if (showOnlyDiscounted) params.append('hasDiscount', 'true');
-    // Catálogo público: solo mostrar productos con stock
-    params.append('inStock', 'true');
+    // Debounce para el searchTerm: esperar 500ms después de que el usuario deje de escribir
+    const timeoutId = setTimeout(() => {
+      const filters = {
+        page: currentPage,
+        size: pageSize,
+        sortBy,
+        sortDirection,
+        inStock: true,
+      };
+      
+      if (searchTerm) filters.name = searchTerm;
+      if (selectedCategory) filters.category = selectedCategory;
+      if (minPrice) filters.minPrice = minPrice;
+      if (maxPrice) filters.maxPrice = maxPrice;
+      if (showOnlyDiscounted) filters.hasDiscount = true;
 
-    const URL = `http://localhost:4002/api/item/catalog/products/search?${params.toString()}`;
+      dispatch(fetchProducts(filters));
+    }, 500);
 
-    fetch(URL, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Error al cargar productos');
-        return response.json();
-      })
-      .then((data) => {
-        setProducts(data.content);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        setError('Error al cargar los productos. Intenta nuevamente.');
-        setLoading(false);
-      });
-  }, [currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted]);
+    return () => clearTimeout(timeoutId);
+  }, [dispatch, currentPage, pageSize, sortBy, sortDirection, searchTerm, selectedCategory, minPrice, maxPrice, showOnlyDiscounted, minPriceError, maxPriceError]);
+
+  useEffect(() => {
+    if (!shouldRefresh) return;
+
+    const filters = {
+      page: currentPage,
+      size: pageSize,
+      sortBy,
+      sortDirection,
+      inStock: true,
+    };
+
+    if (searchTerm) filters.name = searchTerm;
+    if (selectedCategory) filters.category = selectedCategory;
+    if (minPrice) filters.minPrice = minPrice;
+    if (maxPrice) filters.maxPrice = maxPrice;
+    if (showOnlyDiscounted) filters.hasDiscount = true;
+
+    dispatch(fetchProducts(filters));
+    dispatch(clearRefresh());
+  }, [shouldRefresh]);
+
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -130,6 +142,66 @@ export default function HomePage() {
     setSortBy('id');
     setSortDirection('asc');
     setCurrentPage(0);
+    // Resetear errores de validación
+    setMinPriceError('');
+    setMaxPriceError('');
+  };
+
+  // Handlers para validar min/max
+  const handleMinPriceChange = (value) => {
+    // Guardar el valor tal cual (cadena vacía posible)
+    setMinPrice(value);
+    setCurrentPage(0);
+
+    // Validación: si hay maxPrice y minPrice no puede ser mayor
+    if (value === '' || value === null) {
+      setMinPriceError('');
+      // si max está bien, limpiar error de max
+      if (!maxPrice || maxPrice === '') setMaxPriceError('');
+      return;
+    }
+
+    const minNum = Number(value);
+    const maxNum = maxPrice !== '' ? Number(maxPrice) : null;
+
+    if (Number.isNaN(minNum) || !Number.isFinite(minNum) || minNum < 0) {
+      setMinPriceError('Precio mínimo inválido');
+      return;
+    }
+
+    if (maxNum !== null && !Number.isNaN(maxNum) && minNum > maxNum) {
+      setMinPriceError('El precio mínimo no puede ser mayor que el precio máximo');
+    } else {
+      setMinPriceError('');
+      // si anteriormente había error en max y ahora está ok, limpiarlo
+      if (maxPriceError && !(maxNum !== null && minNum > maxNum)) setMaxPriceError('');
+    }
+  };
+
+  const handleMaxPriceChange = (value) => {
+    setMaxPrice(value);
+    setCurrentPage(0);
+
+    if (value === '' || value === null) {
+      setMaxPriceError('');
+      if (!minPrice || minPrice === '') setMinPriceError('');
+      return;
+    }
+
+    const maxNum = Number(value);
+    const minNum = minPrice !== '' ? Number(minPrice) : null;
+
+    if (Number.isNaN(maxNum) || !Number.isFinite(maxNum) || maxNum < 0) {
+      setMaxPriceError('Precio máximo inválido');
+      return;
+    }
+
+    if (minNum !== null && !Number.isNaN(minNum) && maxNum < minNum) {
+      setMaxPriceError('El precio máximo no puede ser menor que el precio mínimo');
+    } else {
+      setMaxPriceError('');
+      if (minPriceError && !(minNum !== null && maxNum < minNum)) setMinPriceError('');
+    }
   };
 
   const handleSortChange = (e) => {
@@ -196,7 +268,7 @@ export default function HomePage() {
           <Paper elevation={2} sx={{ p: 2 }}>
             <Grid container spacing={2} alignItems="center">
               {/* Categoría */}
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Categoría</InputLabel>
                   <Select
@@ -223,17 +295,16 @@ export default function HomePage() {
               </Grid>
 
               {/* Precio mínimo */}
-              <Grid item xs={6} sm={6} md={1.5}>
+              <Grid size={{ xs: 6, sm: 6, md: 1.5 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Precio mín."
                   type="number"
                   value={minPrice}
-                  onChange={(e) => {
-                    setMinPrice(e.target.value);
-                    setCurrentPage(0);
-                  }}
+                  onChange={(e) => handleMinPriceChange(e.target.value)}
+                  error={!!minPriceError}
+                  helperText={minPriceError}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
@@ -241,17 +312,16 @@ export default function HomePage() {
               </Grid>
 
               {/* Precio máximo */}
-              <Grid item xs={6} sm={6} md={1.5}>
+              <Grid size={{ xs: 6, sm: 6, md: 1.5 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Precio máx."
                   type="number"
                   value={maxPrice}
-                  onChange={(e) => {
-                    setMaxPrice(e.target.value);
-                    setCurrentPage(0);
-                  }}
+                  onChange={(e) => handleMaxPriceChange(e.target.value)}
+                  error={!!maxPriceError}
+                  helperText={maxPriceError}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
@@ -259,7 +329,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Ordenar */}
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Ordenar por</InputLabel>
                   <Select
@@ -270,8 +340,6 @@ export default function HomePage() {
                     <MenuItem value="default">Por defecto</MenuItem>
                     <MenuItem value="price-asc">Precio ↑</MenuItem>
                     <MenuItem value="price-desc">Precio ↓</MenuItem>
-                    <MenuItem value="discount-desc">Mayor Descuento</MenuItem>
-                    <MenuItem value="discount-asc">Menor Descuento</MenuItem>
                     <MenuItem value="name-asc">Nombre A-Z</MenuItem>
                     <MenuItem value="name-desc">Nombre Z-A</MenuItem>
                   </Select>
@@ -279,7 +347,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Filtro de descuento */}
-              <Grid item xs={6} sm={6} md={1.5}>
+              <Grid size={{ xs: 6, sm: 6, md: 1.5 }}>
                 <Button
                   fullWidth
                   variant={showOnlyDiscounted ? "contained" : "outlined"}
@@ -297,7 +365,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Items por página */}
-              <Grid item xs={6} sm={3} md={1.5}>
+              <Grid size={{ xs: 6, sm: 3, md: 1.5 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Mostrar</InputLabel>
                   <Select
@@ -313,7 +381,7 @@ export default function HomePage() {
               </Grid>
 
               {/* Limpiar */}
-              <Grid item xs={12} sm={12} md={1.5}>
+              <Grid size={{ xs: 12, sm: 12, md: 1.5 }}>
                 <Button
                   fullWidth
                   variant="outlined"
@@ -409,7 +477,7 @@ export default function HomePage() {
 
           {/* Error */}
           {error && (
-            <Alert severity="error" onClose={() => setError('')}>
+            <Alert severity="error">
               {error}
             </Alert>
           )}

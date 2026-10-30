@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 import {
   Box,
   Button,
@@ -13,43 +14,46 @@ import {
   Divider,
   CircularProgress,
   CardMedia,
-} from '@mui/material';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-import LabelIcon from '@mui/icons-material/Label';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import PercentIcon from '@mui/icons-material/Percent';
-import SaveIcon from '@mui/icons-material/Save';
-import ImageIcon from '@mui/icons-material/Image';
+} from "@mui/material";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import LabelIcon from "@mui/icons-material/Label";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import PercentIcon from "@mui/icons-material/Percent";
+import SaveIcon from "@mui/icons-material/Save";
+import EditIcon from "@mui/icons-material/Edit";
+import { createProduct, updateProduct, triggerRefresh } from "../../redux/productSlice";
+
 
 const categories = [
-  { id: 0, name: 'REMERAS' },
-  { id: 1, name: 'PANTALONES' },
-  { id: 2, name: 'VESTIDOS' },
-  { id: 3, name: 'MEDIAS' },
-  { id: 4, name: 'CALZADO' },
-  { id: 5, name: 'ABRIGO' },
-  { id: 6, name: 'MALLAS' },
+  { id: 0, name: "REMERAS" },
+  { id: 1, name: "PANTALONES" },
+  { id: 2, name: "VESTIDOS" },
+  { id: 3, name: "MEDIAS" },
+  { id: 4, name: "CALZADO" },
+  { id: 5, name: "ABRIGO" },
+  { id: 6, name: "MALLAS" },
 ];
 
 export default function ProductForm({ product, onSubmit, onClose }) {
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState(
     product || {
-      name: '',
-      description: '',
-      price: '',
+      name: "",
+      description: "",
+      price: "",
       discount: 0,
-      stock: '',
-      category: product?.category ?? '',
+      stock: "",
+      category: product?.category ?? "",
       status: 0,
-      imageName: '',
-      imageData: '',
+      imageName: "",
+      imageData: "",
     }
   );
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,7 +62,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       [name]: value,
     });
     if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
+      setErrors({ ...errors, [name]: "" });
     }
   };
 
@@ -66,28 +70,31 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     const file = e.target.files[0];
     if (file) {
       // Validar tipo de archivo
-      if (!file.type.startsWith('image/')) {
-        setErrors({ ...errors, image: 'Por favor selecciona una imagen válida' });
+      if (!file.type.startsWith("image/")) {
+        setErrors({
+          ...errors,
+          image: "Por favor selecciona una imagen válida",
+        });
         return;
       }
 
       // Validar tamaño (máximo 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setErrors({ ...errors, image: 'La imagen no puede superar los 5MB' });
+        setErrors({ ...errors, image: "La imagen no puede superar los 5MB" });
         return;
       }
 
       const reader = new FileReader();
       reader.onload = () => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           imageName: file.name,
           imageData: reader.result, // Base64 string
         }));
-        setErrors({ ...errors, image: '' });
+        setErrors({ ...errors, image: "" });
       };
       reader.onerror = () => {
-        setErrors({ ...errors, image: 'Error al cargar la imagen' });
+        setErrors({ ...errors, image: "Error al cargar la imagen" });
       };
       reader.readAsDataURL(file);
     }
@@ -96,12 +103,12 @@ export default function ProductForm({ product, onSubmit, onClose }) {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'El nombre es obligatorio';
+    if (!formData.name.trim()) newErrors.name = "El nombre es obligatorio";
     if (!formData.description.trim())
-      newErrors.description = 'La descripción es obligatoria';
-    if (!formData.price) newErrors.price = 'El precio es obligatorio';
+      newErrors.description = "La descripción es obligatoria";
+    if (!formData.price) newErrors.price = "El precio es obligatorio";
     else if (isNaN(formData.price) || Number(formData.price) <= 0)
-      newErrors.price = 'El precio debe ser un número mayor a 0';
+      newErrors.price = "El precio debe ser un número mayor a 0";
 
     if (
       formData.discount &&
@@ -109,15 +116,18 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         Number(formData.discount) < 0 ||
         Number(formData.discount) > 100)
     )
-      newErrors.discount = 'El descuento debe ser entre 0 y 100';
+      newErrors.discount = "El descuento debe ser entre 0 y 100";
 
-    if (!formData.stock && formData.stock !== 0) newErrors.stock = 'El stock es obligatorio';
+    if (!formData.stock && formData.stock !== 0)
+      newErrors.stock = "El stock es obligatorio";
     else if (isNaN(formData.stock) || Number(formData.stock) < 0)
-      newErrors.stock = 'El stock debe ser mayor o igual a 0';
+      newErrors.stock = "El stock debe ser mayor o igual a 0";
 
-    if (formData.category === '') newErrors.category = 'La categoría es obligatoria';
+    if (formData.category === "")
+      newErrors.category = "La categoría es obligatoria";
 
-    if (!formData.imageData && !product) newErrors.image = 'La imagen es obligatoria';
+    if (!formData.imageData && !product)
+      newErrors.image = "La imagen es obligatoria";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -125,129 +135,101 @@ export default function ProductForm({ product, onSubmit, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    setSuccessMessage('');
+    setSuccessMessage("");
 
-    try {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        setErrors({ submit: 'No se encontró token de autenticación. Por favor inicia sesión nuevamente.' });
-        setLoading(false);
-        return;
-      }
+    const isEditMode = !!product;
 
-      const isEditMode = !!product;
-      
-      const itemDto = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        status: isEditMode ? formData.status : 0,
-        stock: parseInt(formData.stock),
-        discount: parseInt(formData.discount) || 0,
-        category: formData.category,
-        imageName: formData.imageName,
-        imageData: formData.imageData ? formData.imageData.split(',')[1] : '',
-      };
+    const imagePayload = (() => {
+      if (!formData.imageData) return "";
+      return formData.imageData.includes(",")
+        ? formData.imageData.split(",")[1]
+        : formData.imageData;
+    })();
 
-      // Debug temporal
-      console.log('Modo:', isEditMode ? 'EDITAR' : 'CREAR');
-      console.log('ImageName:', itemDto.imageName);
-      console.log('ImageData length:', itemDto.imageData?.length || 0);
+    const itemDto = {
+      name: formData.name,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      status: isEditMode ? formData.status : 0,
+      stock: parseInt(formData.stock),
+      discount: parseInt(formData.discount) || 0,
+      category: formData.category,
+      imageName: formData.imageName,
+      imageData: imagePayload,
+    };
 
-      const url = isEditMode 
-        ? `http://localhost:4002/api/item/products/${product.id}`
-        : 'http://localhost:4002/api/item/products';
-
-      const response = await fetch(url, {
-        method: isEditMode ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(itemDto)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        
-        let errorMessage = isEditMode ? 'Error al actualizar producto' : 'Error al crear producto';
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData?.message || errorData?.error || errorMessage;
-        } catch (e) {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(`${errorMessage} (Status: ${response.status})`);
-      }
-
-      const savedProduct = await response.json();
-      setSuccessMessage(isEditMode ? '¡Producto actualizado exitosamente!' : '¡Producto creado exitosamente!');
-      
-      // Llamar al callback onSubmit si existe
-      if (onSubmit) {
-        onSubmit(savedProduct);
-      }
-
-      // Limpiar formulario después de 2 segundos
-      setTimeout(() => {
-        if (!isEditMode) {
-          setFormData({
-            name: '',
-            description: '',
-            price: '',
-            discount: 0,
-            stock: '',
-            category: 0,
-            imageName: '',
-            imageData: '',
-          });
-        }
-        setSuccessMessage('');
-        if (onClose) onClose();
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error al guardar producto:', error);
-      setErrors({ submit: error.message });
-    } finally {
-      setLoading(false);
+    if (isEditMode) {
+      await dispatch(updateProduct({ id: product.id, productData: itemDto }));
+      dispatch(triggerRefresh());
+    } else {
+      await dispatch(createProduct(itemDto));
+      dispatch(triggerRefresh());
     }
+
+    setSuccessMessage(
+      isEditMode
+        ? "¡Producto actualizado exitosamente!"
+        : "¡Producto creado exitosamente!"
+    );
+
+    if (onSubmit) {
+      onSubmit();
+    }
+
+    setTimeout(() => {
+      if (!isEditMode) {
+        setFormData({
+          name: "",
+          description: "",
+          price: "",
+          discount: 0,
+          stock: "",
+          category: 0,
+          imageName: "",
+          imageData: "",
+        });
+      }
+      setSuccessMessage("");
+      if (onClose) onClose();
+    }, 2000);
+
+    setLoading(false);
   };
 
   const finalPrice =
     formData.price && formData.discount
-      ? (Number(formData.price) * (1 - Number(formData.discount) / 100)).toFixed(2)
+      ? (
+          Number(formData.price) *
+          (1 - Number(formData.discount) / 100)
+        ).toFixed(2)
       : formData.price;
 
   return (
-    <Box sx={{ bgcolor: 'background.default', p: 4 }}>
+    <Box sx={{ bgcolor: "background.default", p: 4 }}>
       <Box mx="auto">
         <Box display="flex" alignItems="center" gap={2} mb={3}>
           <Box
             sx={{
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
               width: 48,
               height: 48,
               borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <ShoppingBagIcon />
           </Box>
           <Box>
             <Typography variant="h4" color="text.primary" fontWeight={700}>
-              {product ? 'Editar Producto' : 'Nuevo Producto'}
+              {product ? "Editar Producto" : "Nuevo Producto"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Completa los datos del producto para tu tienda
@@ -290,7 +272,10 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                   helperText={errors.description}
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 2 }}>
+                      <InputAdornment
+                        position="start"
+                        sx={{ alignSelf: "flex-start", mt: 2 }}
+                      >
                         <InventoryIcon />
                       </InputAdornment>
                     ),
@@ -344,8 +329,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                     icon={false}
                     severity="success"
                     sx={{
-                      border: '1px solid',
-                      borderColor: 'success.light',
+                      border: "1px solid",
+                      borderColor: "success.light",
                       borderRadius: 2,
                     }}
                   >
@@ -357,8 +342,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                         <Typography
                           variant="body2"
                           sx={{
-                            textDecoration: 'line-through',
-                            color: 'success.light',
+                            textDecoration: "line-through",
+                            color: "success.light",
                             mr: 1,
                           }}
                         >
@@ -430,10 +415,10 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                     variant="outlined"
                     component="label"
                     fullWidth
-                    startIcon={<ImageIcon />}
-                    sx={{ py: 2, borderStyle: 'dashed' }}
+                    startIcon={<EditIcon />}
+                    sx={{ py: 2, borderStyle: "dashed" }}
                   >
-                    {formData.imageName || 'Seleccionar Imagen'}
+                    {"Editar Imagen"}
                     <input
                       type="file"
                       hidden
@@ -442,7 +427,11 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                     />
                   </Button>
                   {errors.image && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                    <Typography
+                      variant="caption"
+                      color="error"
+                      sx={{ mt: 1, display: "block" }}
+                    >
                       {errors.image}
                     </Typography>
                   )}
@@ -451,12 +440,16 @@ export default function ProductForm({ product, onSubmit, onClose }) {
 
               {formData.imageData && (
                 <Grid item xs={12}>
-                  <Card sx={{ maxWidth: 300, mx: 'auto' }}>
+                  <Card sx={{ maxWidth: 300, mx: "auto" }}>
                     <CardMedia
                       component="img"
-                      image={formData.imageData}
+                      image={
+                        formData.imageData.startsWith("data:")
+                          ? formData.imageData
+                          : `data:image/png;base64,${formData.imageData}`
+                      }
                       alt="Preview"
-                      sx={{ height: 200, objectFit: 'cover' }}
+                      sx={{ height: 200, objectFit: "cover" }}
                     />
                   </Card>
                 </Grid>
@@ -485,10 +478,16 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               size="large"
               fullWidth
               onClick={handleSubmit}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <SaveIcon />
+                )
+              }
               disabled={loading}
             >
-              {loading ? 'Guardando...' : 'Guardar Producto'}
+              {loading ? "Guardando..." : "Guardar Producto"}
             </Button>
           </Box>
         </Card>

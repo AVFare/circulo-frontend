@@ -1,32 +1,57 @@
-import { useState, useEffect } from 'react';
-import { 
-  IconButton, 
-  Menu, 
-  MenuItem, 
-  Avatar, 
-  Divider, 
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Divider,
   ListItemIcon,
   Typography,
-  Box
-} from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-import LockIcon from '@mui/icons-material/Lock';
-import LogoutIcon from '@mui/icons-material/Logout';
-import { useNavigate } from 'react-router-dom';
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Snackbar,
+  Alert,
+} from "@mui/material";
+import PersonIcon from "@mui/icons-material/Person";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import LockIcon from "@mui/icons-material/Lock";
+import LogoutIcon from "@mui/icons-material/Logout";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import PeopleIcon from "@mui/icons-material/People";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import CloseIcon from "@mui/icons-material/Close";
+import { useNavigate } from "react-router-dom";
+import ProductForm from "./admin/ProductForm";
+import ProductList from "./admin/ProductList";
+import UserList from "./admin/UserList";
+import OrderList from "./admin/OrderList";
+import { fetchProfile, logout } from "../redux/userSlice";
 
 export default function UserMenu() {
+  const dispatch = useDispatch();
+  const { profile, token } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [user, setUser] = useState(null);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [productListModalOpen, setProductListModalOpen] = useState(false);
+  const [userListModalOpen, setUserListModalOpen] = useState(false);
+  const [orderListModalOpen, setOrderListModalOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const open = Boolean(anchorEl);
 
   useEffect(() => {
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      setUser(JSON.parse(userInfo));
+    if (token && !profile) {
+      dispatch(fetchProfile());
     }
-  }, []);
+  }, [dispatch, profile, token]);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -37,28 +62,87 @@ export default function UserMenu() {
   };
 
   const handleProfile = () => {
-    navigate('/perfil');
+    navigate("/perfil");
     handleClose();
   };
 
   const handleOrders = () => {
-    navigate('/mis-ordenes');
+    navigate("/mis-ordenes");
     handleClose();
   };
 
   const handleChangePassword = () => {
-    navigate('/cambiar-contrasena');
+    navigate("/cambiar-contrasena");
     handleClose();
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userInfo');
-    localStorage.removeItem('access_token');
-    navigate('/');
+    dispatch(logout());
+    navigate("/");
     handleClose();
   };
 
-  if (!user) return null;
+  const handleAdminAction = (action) => {
+    handleClose();
+    if (action === "createProduct") {
+      setProductModalOpen(true);
+    } else if (action === "productList") {
+      setProductListModalOpen(true);
+    } else if (action === "users") {
+      setUserListModalOpen(true);
+    } else if (action === "orders") {
+      setOrderListModalOpen(true);
+    }
+  };
+
+  const handleProductSubmit = () => {
+    setProductModalOpen(false);
+    setSnackbar({
+      open: true,
+      message: "Producto creado con éxito",
+      severity: "success",
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  if (!profile) return null;
+
+  const firstName =
+    profile?.firstName || profile?.firstname || profile?.name?.split(" ")[0] || "";
+  const lastName =
+    profile?.lastName ||
+    profile?.lastname ||
+    (profile?.name?.split(" ").length > 1
+      ? profile?.name?.split(" ").slice(-1)[0]
+      : "");
+  const displayName = `${firstName} ${lastName}`.trim();
+
+  const getAvatarInitials = () => {
+    const firstInitial = firstName?.trim().charAt(0) || "";
+    const lastInitial = lastName?.trim().charAt(0) || "";
+    let initials = `${firstInitial}${lastInitial}`.toUpperCase().trim();
+
+    if (!initials) {
+      return (profile?.email?.slice(0, 2) || "US").toUpperCase();
+    }
+
+    if (initials.length === 1) {
+      const fallback =
+        firstName?.trim().charAt(1) ||
+        lastName?.trim().charAt(1) ||
+        profile?.email?.charAt(1) ||
+        "X";
+      initials = `${initials}${fallback}`.slice(0, 2).toUpperCase();
+    }
+
+    return initials;
+  };
+
+  const avatarInitials = getAvatarInitials();
+  const isAdmin = profile?.role === "ADMIN";
 
   return (
     <>
@@ -66,12 +150,19 @@ export default function UserMenu() {
         onClick={handleClick}
         size="small"
         sx={{ ml: 2 }}
-        aria-controls={open ? 'user-menu' : undefined}
+        aria-controls={open ? "user-menu" : undefined}
         aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
+        aria-expanded={open ? "true" : undefined}
       >
-        <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-          {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+        <Avatar
+          sx={{
+            width: 36,
+            height: 36,
+            bgcolor: "secondary.main",
+            fontWeight: 700,
+          }}
+        >
+          {avatarInitials.toUpperCase()}
         </Avatar>
       </IconButton>
       <Menu
@@ -80,17 +171,17 @@ export default function UserMenu() {
         open={open}
         onClose={handleClose}
         onClick={handleClose}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         slotProps={{
           paper: {
             elevation: 0,
             sx: {
-              overflow: 'visible',
-              filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+              overflow: "visible",
+              filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
               mt: 1.5,
-              minWidth: 200,
-              '& .MuiAvatar-root': {
+              minWidth: 230,
+              "& .MuiAvatar-root": {
                 width: 32,
                 height: 32,
                 ml: -0.5,
@@ -100,13 +191,27 @@ export default function UserMenu() {
           },
         }}
       >
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-            {user.email}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-            {user.firstName || user.firstname} {user.lastName || user.lastname}
-          </Typography>
+        <Box
+          sx={{ px: 2, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}
+        >
+          <Avatar
+            sx={{
+              width: 48,
+              height: 48,
+              bgcolor: "secondary.main",
+              fontWeight: 700,
+            }}
+          >
+            {avatarInitials}
+          </Avatar>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {displayName || profile?.email}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {profile?.email}
+            </Typography>
+          </Box>
         </Box>
         <Divider />
         <MenuItem onClick={handleProfile}>
@@ -115,7 +220,7 @@ export default function UserMenu() {
           </ListItemIcon>
           Mi Perfil
         </MenuItem>
-        {user.role !== 'ADMIN' && (
+        {!isAdmin && (
           <MenuItem onClick={handleOrders}>
             <ListItemIcon>
               <ShoppingBagIcon fontSize="small" />
@@ -129,7 +234,45 @@ export default function UserMenu() {
           </ListItemIcon>
           Cambiar Contraseña
         </MenuItem>
-        <Divider />
+
+        {isAdmin && [
+          <Divider key="divider-admin" sx={{ my: 1 }} />,
+          <Box key="box-admin-title" sx={{ px: 2, pb: 1 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
+            >
+              Panel administrativo
+            </Typography>
+          </Box>,
+          <MenuItem key="create-product" onClick={() => handleAdminAction("createProduct")}>
+            <ListItemIcon>
+              <InventoryIcon fontSize="small" />
+            </ListItemIcon>
+            Crear Producto
+          </MenuItem>,
+          <MenuItem key="product-list" onClick={() => handleAdminAction("productList")}>
+            <ListItemIcon>
+              <ListAltIcon fontSize="small" />
+            </ListItemIcon>
+            Ver Productos
+          </MenuItem>,
+          <MenuItem key="users" onClick={() => handleAdminAction("users")}>
+            <ListItemIcon>
+              <PeopleIcon fontSize="small" />
+            </ListItemIcon>
+            Usuarios
+          </MenuItem>,
+          <MenuItem key="orders" onClick={() => handleAdminAction("orders")}>
+            <ListItemIcon>
+              <ShoppingCartIcon fontSize="small" />
+            </ListItemIcon>
+            Órdenes
+          </MenuItem>
+        ]}
+
+        <Divider sx={{ mt: 1 }} />
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
@@ -137,6 +280,141 @@ export default function UserMenu() {
           Cerrar Sesión
         </MenuItem>
       </Menu>
+
+      {/* Modales administrativos */}
+      <Dialog
+        open={productModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: "primary.main",
+            color: "white",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          Crear Nuevo Producto
+          <IconButton
+            aria-label="close"
+            onClick={() => setProductModalOpen(false)}
+            sx={{ color: "white" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <ProductForm
+            onSubmit={handleProductSubmit}
+            onClose={() => setProductModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={productListModalOpen}
+        onClose={() => setProductListModalOpen(false)}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: "primary.main",
+            color: "white",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          Gestión de Productos
+          <IconButton
+            aria-label="close"
+            onClick={() => setProductListModalOpen(false)}
+            sx={{ color: "white" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <ProductList onCloseDrawer={() => setProductListModalOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={userListModalOpen}
+        onClose={() => setUserListModalOpen(false)}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: "primary.main",
+            color: "white",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          Gestión de Usuarios
+          <IconButton
+            aria-label="close"
+            onClick={() => setUserListModalOpen(false)}
+            sx={{ color: "white" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <UserList />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={orderListModalOpen}
+        onClose={() => setOrderListModalOpen(false)}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: "primary.main",
+            color: "white",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          Gestión de Órdenes
+          <IconButton
+            aria-label="close"
+            onClick={() => setOrderListModalOpen(false)}
+            sx={{ color: "white" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <OrderList />
+        </DialogContent>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

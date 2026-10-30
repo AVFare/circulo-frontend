@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProfile } from '../redux/userSlice';
 import {
   Container,
   Paper,
@@ -17,45 +19,17 @@ import HomeIcon from '@mui/icons-material/Home';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 export default function Profile() {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const dispatch = useDispatch();
+  const { profile, loading, error, token } = useSelector((state) => state.user);
 
   useEffect(() => {
     document.title = 'Mi Perfil - CÍRCULO';
     
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setError('No se encontró token de autenticación');
-      setLoading(false);
-      return;
+    // Solo hacer fetch si hay token y no hay perfil cargado
+    if (token && !profile) {
+      dispatch(fetchProfile());
     }
-
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    };
-
-    fetch('http://localhost:4002/api/user/profile', options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Error al cargar el perfil');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProfile(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error al obtener el perfil:', error);
-        setError('No se pudo cargar el perfil');
-        setLoading(false);
-      });
-  }, []);
+  }, [dispatch, token, profile]);
 
   if (loading) {
     return (

@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUsers, fetchUserById } from '../../redux/userSlice';
+import { fetchOrders } from '../../redux/orderSlice';
 import {
   Box,
   Typography,
@@ -34,94 +37,49 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 import LastPageIcon from '@mui/icons-material/LastPage';
 
 export default function UserList() {
-  const [userList, setUserList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const dispatch = useDispatch();
+  const { users: userList, totalPages, totalElements, loading, error } = useSelector((state) => state.user);
+  const token = useSelector((state) => state.user.token);
+  
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userOrders, setUserOrders] = useState([]);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
-  }, [page, rowsPerPage]);
+    dispatch(fetchUsers({ page, size: rowsPerPage, sortBy: 'id', sortDirection: 'asc' }));
+  }, [dispatch, page, rowsPerPage]);
 
-  const fetchUsers = () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setError('No se encontró token de autenticación');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    };
-
-    const url = `http://localhost:4002/api/user/users?page=${page}&size=${rowsPerPage}&sortBy=id&sortDirection=asc`;
-
-    fetch(url, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Error al cargar usuarios');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setUserList(data.content || []);
-        setTotalPages(data.totalPages || 0);
-        setTotalElements(data.totalElements || 0);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error al obtener usuarios:', error);
-        setError('No se pudieron cargar los usuarios');
-        setLoading(false);
-      });
-  };
-
-  const fetchUserDetails = (userId) => {
-    const token = localStorage.getItem('access_token');
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    };
-
-    fetch(`http://localhost:4002/api/user/users/${userId}`, options)
-      .then((response) => response.json())
-      .then((user) => {
-        setSelectedUser(user);
+  const fetchUserDetails = async (userId) => {
+    try {
+      // Usar Redux para obtener el usuario
+      const userAction = await dispatch(fetchUserById(userId));
+      
+      if (fetchUserById.fulfilled.match(userAction)) {
+        setSelectedUser(userAction.payload);
         setDetailModalOpen(true);
         
         setLoadingOrders(true);
-        fetch(`http://localhost:4002/api/action/orders?page=0&size=100`, options)
-          .then((response) => response.json())
-          .then((data) => {
-            const filteredOrders = (data.content || []).filter(order => order.userId === userId);
-            setUserOrders(filteredOrders);
-            setLoadingOrders(false);
-          })
-          .catch((error) => {
-            console.error('Error al obtener órdenes del usuario:', error);
-            setUserOrders([]);
-            setLoadingOrders(false);
-          });
-      })
-      .catch((error) => {
-        console.error('Error al obtener detalles del usuario:', error);
-      });
+        // Usar Redux para obtener las órdenes
+        const resultAction = await dispatch(fetchOrders({ page: 0, size: 100 }));
+        
+        if (fetchOrders.fulfilled.match(resultAction)) {
+          const filteredOrders = (resultAction.payload.content || []).filter(order => order.userId === userId);
+          setUserOrders(filteredOrders);
+        } else {
+          setUserOrders([]);
+        }
+        setLoadingOrders(false);
+      } else {
+        throw new Error('No se pudo obtener el usuario');
+      }
+    } catch (error) {
+      console.error('Error al obtener detalles del usuario:', error);
+      setUserOrders([]);
+      setLoadingOrders(false);
+    }
   };
 
   const handleViewDetails = (user) => {

@@ -4,8 +4,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RecyclingIcon from '@mui/icons-material/Recycling';
-import { useState, useEffect } from 'react';
-import AdminDrawer from './admin/AdminDrawer';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import UserMenu from './UserMenu';
 
 const Search = styled('div')(({ theme }) => ({
@@ -48,19 +48,12 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export default function Header({ onSearch }) {
-  const [user, setUser] = useState(null);
+  const user = useSelector((state) => state.user.profile);
+  const token = useSelector((state) => state.user.token);
   const [searchValue, setSearchValue] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/inicio';
-
-  useEffect(() => {
-    // Recuperar datos de usuario del localStorage
-    const userData = localStorage.getItem('userInfo');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
 
   const handleSearchChange = (e) => {
     setSearchValue(e.target.value);
@@ -98,12 +91,6 @@ export default function Header({ onSearch }) {
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-            {/* Mostrar AdminDrawer solo para usuarios admin */}
-            {user && user.role === 'ADMIN' && (
-              <AdminDrawer onNavigate={(section) => {
-                // Aquí podrías manejar la navegación o abrir modales según la sección
-              }} />
-            )}
 
             {/* Logo q usamos en toda la app: MATERIAL UI CODED  */}
             <Typography
@@ -153,7 +140,28 @@ export default function Header({ onSearch }) {
             </Search>
           </Box>
 
-          <UserMenu />
+          {user && token ? (
+            <UserMenu />
+          ) : (
+            <Box sx={{ ml: 2 }}>
+              <a href="/" style={{ textDecoration: 'none' }}>
+                <button
+                  class="MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-colorPrimary"
+                  type="button"
+                  style={{
+                    fontWeight: 'bold',
+                    background: '#fff',
+                    color: '#35571c',
+                    border: '1px solid #35571c',
+                    padding: '8px 16px',
+                    borderRadius: '12px'
+                  }}
+                >
+                  Iniciar Sesión
+                </button>
+              </a>
+            </Box>
+          )}
         </Toolbar>
       </Container>
     </AppBar>

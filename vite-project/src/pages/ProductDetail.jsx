@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductById, clearCurrentProduct, deleteProduct } from "../redux/productSlice";
 import {
   Box,
   Container,
@@ -31,62 +33,41 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useOutletContext();
+  const dispatch = useDispatch();
+  const {
+    currentProduct: product,
+    loading,
+    error,
+  } = useSelector((state) => state.products);
+  const user = useSelector((state) => state.user.profile);
+  const token = useSelector((state) => state.user.token);
+
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  useEffect(() => {
-    // Verificar si el usuario es admin
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      const user = JSON.parse(userInfo);
-      setIsAdmin(user.role === 'ADMIN');
-    }
-  }, []);
+  const isAdmin = user?.role === "ADMIN";
 
   useEffect(() => {
-    setLoading(true);
-    setError('');
+    dispatch(fetchProductById(id));
 
-    const URL = `http://localhost:4002/api/item/catalog/products/${id}`;
-
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    return () => {
+      dispatch(clearCurrentProduct());
     };
+  }, [dispatch, id, refreshTrigger]);
 
-    fetch(URL, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Producto no encontrado');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProduct(data);
-        setLoading(false);
-        // Actualizar título con el nombre del producto
-        document.title = `${data.name} - CÍRCULO`;
-      })
-      .catch((error) => {
-        console.error('Error al obtener el producto: ', error);
-        setError('No se pudo cargar el producto');
-        setLoading(false);
-      });
-  }, [id, refreshTrigger]);
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} - CÍRCULO`;
+    }
+  }, [product]);
 
   if (loading) {
     return (
-      <Container sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
+      <Container sx={{ py: 4, display: "flex", justifyContent: "center" }}>
         <CircularProgress />
       </Container>
     );
@@ -95,7 +76,9 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <Container sx={{ py: 4 }}>
-        <Typography variant="h6" color="error">{error || 'Producto no encontrado'}</Typography>
+        <Typography variant="h6" color="error">
+          {error || "Producto no encontrado"}
+        </Typography>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate("/inicio")}
@@ -108,7 +91,7 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    if (localStorage.getItem("userInfo")) {
+    if (user) {
       addToCart(product);
       setSnackbarOpen(true);
     } else {
@@ -125,38 +108,25 @@ export default function ProductDetail() {
   };
 
   const handleProductSubmit = (productData) => {
-    console.log('Producto actualizado:', productData);
-    setRefreshTrigger(prev => prev + 1);
+    console.log("Producto actualizado:", productData);
+    setRefreshTrigger((prev) => prev + 1);
     handleCloseEditModal();
   };
 
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-
-      const response = await fetch(`http://localhost:4002/api/item/products/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: 2 }) // 2 = DELETED
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar producto');
-      }
+      await dispatch(deleteProduct({ id: parseInt(id), status: 2 })).unwrap();
 
       setDeleteDialogOpen(false);
       setSuccessDialogOpen(true);
       // cerrar y navegar luego de mostrar el dialog
       setTimeout(() => {
         setSuccessDialogOpen(false);
-        navigate('/inicio');
+        navigate("/inicio");
       }, 900);
     } catch (error) {
-      console.error('Error al eliminar producto:', error);
-      alert('Error al eliminar el producto: ' + error.message);
+      console.error("Error al eliminar producto:", error);
+      alert("Error al eliminar el producto: " + error.message);
     }
   };
 
@@ -171,7 +141,7 @@ export default function ProductDetail() {
         </IconButton>
 
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper
               elevation={0}
               sx={{
@@ -213,7 +183,7 @@ export default function ProductDetail() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={2}>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
                 {product.name}
@@ -221,7 +191,14 @@ export default function ProductDetail() {
 
               {/* Información de admin */}
               {isAdmin && (
-                <Paper sx={{ p: 2, bgcolor: 'grey.50', border: '1px solid', borderColor: 'grey.300' }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    bgcolor: "grey.50",
+                    border: "1px solid",
+                    borderColor: "grey.300",
+                  }}
+                >
                   <Stack spacing={1.5}>
                     <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                       Panel de Administrador
@@ -231,13 +208,16 @@ export default function ProductDetail() {
                         Estado:
                       </Typography>
                       <Chip
-                        label={product.status || 'PUBLISHED'}
+                        label={product.status || "PUBLISHED"}
                         size="small"
                         color={
-                          product.status === 'PUBLISHED' ? 'success' :
-                          product.status === 'SOLD' ? 'info' :
-                          product.status === 'DELETED' ? 'error' :
-                          'default'
+                          product.status === "PUBLISHED"
+                            ? "success"
+                            : product.status === "SOLD"
+                            ? "info"
+                            : product.status === "DELETED"
+                            ? "error"
+                            : "default"
                         }
                       />
                     </Stack>
@@ -250,23 +230,27 @@ export default function ProductDetail() {
                       </Typography>
                     </Stack>
                     <Stack direction="row" spacing={1}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<EditIcon />}
-                        size="small"
-                        onClick={handleEdit}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<DeleteIcon />}
-                        size="small"
-                        onClick={openDeleteDialog}
-                      >
-                        Eliminar
-                      </Button>
+                      {product.status !== "DELETED" && (
+                        <Button
+                          variant="outlined"
+                          startIcon={<EditIcon />}
+                          size="small"
+                          onClick={handleEdit}
+                        >
+                          Editar
+                        </Button>
+                      )}
+                      {product.status !== "DELETED" && (
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          size="small"
+                          onClick={openDeleteDialog}
+                        >
+                          Eliminar
+                        </Button>
+                      )}
                     </Stack>
                   </Stack>
                 </Paper>
@@ -275,24 +259,29 @@ export default function ProductDetail() {
               {/* Precio con descuento */}
               {product.discount > 0 ? (
                 <Box>
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    flexWrap="wrap"
+                  >
                     <Typography
                       variant="h5"
                       sx={{
-                        color: 'text.disabled',
-                        textDecoration: 'line-through',
+                        color: "text.disabled",
+                        textDecoration: "line-through",
                       }}
                     >
-                      ${product.price.toLocaleString('es-AR')}
+                      ${product.price.toLocaleString("es-AR")}
                     </Typography>
                     <Chip
                       label={`${product.discount}% OFF`}
                       size="medium"
                       sx={{
-                        bgcolor: 'success.main',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: '0.9rem',
+                        bgcolor: "success.main",
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "0.9rem",
                       }}
                     />
                   </Stack>
@@ -300,7 +289,11 @@ export default function ProductDetail() {
                     variant="h3"
                     sx={{ fontWeight: 800, color: "primary.main", mt: 1 }}
                   >
-                    ${(product.price * (1 - product.discount / 100)).toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                    $
+                    {(
+                      product.price *
+                      (1 - product.discount / 100)
+                    ).toLocaleString("es-AR", { maximumFractionDigits: 2 })}
                   </Typography>
                 </Box>
               ) : (
@@ -384,8 +377,8 @@ export default function ProductDetail() {
         </Snackbar>
 
         {/* Dialog para pedir login */}
-        <Dialog 
-          open={openLoginDialog} 
+        <Dialog
+          open={openLoginDialog}
           onClose={() => setOpenLoginDialog(false)}
           maxWidth="xs"
           fullWidth
@@ -412,47 +405,43 @@ export default function ProductDetail() {
             </Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button 
-              onClick={() => setOpenLoginDialog(false)}
-              color="inherit"
-            >
+            <Button onClick={() => setOpenLoginDialog(false)} color="inherit">
               Cancelar
             </Button>
-            <Button 
-              variant="contained" 
-              onClick={() => navigate("/")}
-            >
+            <Button variant="contained" onClick={() => navigate("/")}>
               Ir a login
             </Button>
           </DialogActions>
         </Dialog>
 
         {/* Modal para editar producto */}
-        <Dialog 
+        <Dialog
           open={editModalOpen}
           onClose={handleCloseEditModal}
           fullWidth
           maxWidth="md"
         >
-          <DialogTitle sx={{ 
-            bgcolor: 'primary.main', 
-            color: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
+          <DialogTitle
+            sx={{
+              bgcolor: "primary.main",
+              color: "white",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             Editar Producto
             <IconButton
               aria-label="close"
               onClick={handleCloseEditModal}
-              sx={{ color: 'white' }}
+              sx={{ color: "white" }}
             >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ pt: 3 }}>
-            <ProductForm 
-              product={product} 
+            <ProductForm
+              product={product}
               onSubmit={handleProductSubmit}
               onClose={handleCloseEditModal}
             />
@@ -466,24 +455,31 @@ export default function ProductDetail() {
           fullWidth
           maxWidth="sm"
         >
-          <DialogTitle sx={{ 
-            bgcolor: 'primary.main', 
-            color: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
+          <DialogTitle
+            sx={{
+              bgcolor: "primary.main",
+              color: "white",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             Confirmar eliminación
             <IconButton
               aria-label="close"
               onClick={closeDeleteDialog}
-              sx={{ color: 'white' }}
+              sx={{ color: "white" }}
             >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ pt: 3 }}>
-            <Typography variant="h6" fontWeight={600} color="text.primary" gutterBottom>
+            <Typography
+              variant="h6"
+              fontWeight={600}
+              color="text.primary"
+              gutterBottom
+            >
               ¿Está seguro de que desea eliminar este producto?
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -492,11 +488,7 @@ export default function ProductDetail() {
           </DialogContent>
 
           <Box p={3} bgcolor="background.default" display="flex" gap={2}>
-            <Button
-              variant="outlined"
-              fullWidth
-              onClick={closeDeleteDialog}
-            >
+            <Button variant="outlined" fullWidth onClick={closeDeleteDialog}>
               Cancelar
             </Button>
             <Button
@@ -516,7 +508,7 @@ export default function ProductDetail() {
           fullWidth
           maxWidth="xs"
         >
-          <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
+          <DialogTitle sx={{ bgcolor: "primary.main", color: "white" }}>
             Producto eliminado
           </DialogTitle>
           <DialogContent>

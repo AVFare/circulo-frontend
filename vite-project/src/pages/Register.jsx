@@ -9,10 +9,14 @@ import {
   Alert,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser, fetchProfile, clearError } from "../redux/userSlice";
 import RecyclingIcon from "@mui/icons-material/Recycling";
 
 export default function Register() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.user);
   const [form, setForm] = useState({
     firstname: "",
     lastname: "",
@@ -20,12 +24,17 @@ export default function Register() {
     username: "",
     password: "",
   });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  // Para resaltar campo si el mensaje del backend lo menciona
+  const emailHasError = /email/i.test(error);
+  const usernameHasError = /usuario|username/i.test(error);
 
   useEffect(() => {
-    document.title = 'Crear Cuenta - CÍRCULO';
-  }, []);
+    document.title = "Crear Cuenta - CÍRCULO";
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -33,60 +42,11 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const datosAEnviar = {
-      firstname: form.firstname,
-      lastname: form.lastname,
-      email: form.email,
-      username: form.username,
-      password: form.password,
-    };
-
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(datosAEnviar),
-    };
-
-    const URL = "http://localhost:4002/api/v1/auth/register";
-
-    fetch(URL, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Error al registrar usuario");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Registro exitoso:", data);
-
-        // Guardar el token en localStorage
-        localStorage.setItem("access_token", data.access_token);
-
-        // Guardar información del usuario
-        const userInfo = {
-          firstname: form.firstname,
-          lastname: form.lastname,
-          email: form.email,
-          username: form.username,
-          role: data.role,
-        };
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
-
-        // Redirigir al home
-        navigate("/");
-      })
-      .catch((error) => {
-        console.error("Error al obtener los datos: ", error);
-        setError("Error al registrar usuario. Intenta nuevamente.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const result = await dispatch(registerUser(form));
+    if (registerUser.fulfilled.match(result)) {
+      await dispatch(fetchProfile());
+      navigate("/inicio");
+    }
   };
 
   return (
@@ -177,6 +137,8 @@ export default function Register() {
               onChange={handleChange}
               required
               disabled={loading}
+              error={emailHasError}
+              helperText={emailHasError ? error : ""}
             />
 
             <TextField
@@ -187,6 +149,8 @@ export default function Register() {
               onChange={handleChange}
               required
               disabled={loading}
+              error={usernameHasError}
+              helperText={usernameHasError ? error : ""}
             />
 
             <TextField
@@ -227,11 +191,11 @@ export default function Register() {
             Iniciá sesión
           </Link>
         </Typography>
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
+        <Box sx={{ mt: 4, textAlign: "center" }}>
           <Typography variant="body2" sx={{ mb: 1 }}>
             Continuar sin registrarse a ver los productos (debes estar registrado e iniciar sesión para comprar)
           </Typography>
-          <Button variant="outlined" color="primary" onClick={() => navigate('/inicio')}>
+          <Button variant="outlined" color="primary" onClick={() => navigate("/inicio")}>
             Ver productos
           </Button>
         </Box>

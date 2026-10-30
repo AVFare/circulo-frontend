@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchOrders } from '../redux/orderSlice';
 import {
   Container,
   Paper,
@@ -31,13 +33,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 
 export default function MyOrders() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const dispatch = useDispatch();
+  const { items: orders, totalPages, totalElements, loading, error } = useSelector((state) => state.orders);
+  const token = useSelector((state) => state.user.token);
+  
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
@@ -46,47 +47,12 @@ export default function MyOrders() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
     if (!token) {
-      setError('No se encontró token de autenticación');
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(''); // Limpiar errores previos
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    };
-
-    const url = `http://localhost:4002/api/action/orders?page=${page}&size=${rowsPerPage}`;
-
-    fetch(url, options)
-      .then((response) => {
-        if (!response.ok) {
-          return response.text().then(text => {
-            console.error('Error response:', text);
-            throw new Error(`Error ${response.status}: ${text}`);
-          });
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setOrders(data.content || []);
-        setTotalPages(data.totalPages || 0);
-        setTotalElements(data.totalElements || 0);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error al obtener las órdenes:', error);
-        setError('No se pudieron cargar las órdenes');
-        setLoading(false);
-      });
-  }, [page, rowsPerPage]);
+    dispatch(fetchOrders({ page, size: rowsPerPage }));
+  }, [dispatch, page, rowsPerPage, token]);
 
   const handleViewDetails = (order) => {
     setSelectedOrder(order);
